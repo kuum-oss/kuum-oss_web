@@ -175,6 +175,15 @@
     .nav-links a:hover { color: var(--neon); }
     .nav-links a:hover::after { width: 100%; }
 
+    /* Кастомные цветные ссылки */
+    .nav-links a.link-main { color: #00ff8c; }
+    .nav-links a.link-main::after { background: #00ff8c; }
+    .nav-links a.link-main:hover { color: #00ff8c; }
+
+    .nav-links a.link-edu { color: #00a2ff; }
+    .nav-links a.link-edu::after { background: #00a2ff; }
+    .nav-links a.link-edu:hover { color: #00a2ff; }
+
     /* ═══════════════════════════════════════════════
        HERO
     ═══════════════════════════════════════════════ */
@@ -708,7 +717,7 @@
       .nav-links { gap: 18px; }
       .page { padding: 0 18px 80px; }
       .hero-name { font-size: clamp(44px, 13vw, 72px); letter-spacing: -1px; }
-      .metrics { grid-template-columns: 1fr 1fr; }
+      .metrics { grid-template-columns: 1fr; }
       .metrics .metric:last-child { grid-column: 1 / -1; }
       .projects-grid { grid-template-columns: 1fr; }
       .card.wide { grid-template-columns: 1fr; }
@@ -717,7 +726,8 @@
       footer { flex-direction: column; gap: 12px; text-align: center; }
     }
     @media (max-width: 480px) {
-      .nav-links { display: none; }
+      .nav-links { display: flex; gap: 12px; }
+      .nav-links a { font-size: 10px; letter-spacing: 1px; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
@@ -737,6 +747,8 @@
 <nav>
   <a class="nav-logo" href="#">kuum-oss</a>
   <ul class="nav-links">
+    <li><a href="index.html" class="link-main">main</a></li>
+    <li><a href="education.html" class="link-edu">edu</a></li>
     <li><a href="#metrics">metrics</a></li>
     <li><a href="#stack">stack</a></li>
     <li><a href="#projects">projects</a></li>
