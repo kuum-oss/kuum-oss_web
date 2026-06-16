@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>kuum-oss // systems engineer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════════════
+       DESIGN TOKENS
+    ═══════════════════════════════════════════════ */
+    :root {
+      --ink:    #070c12;
+      --ink2:   #0d1520;
+      --panel:  #111b28;
+      --edge:   rgba(0,255,140,0.12);
+      --edge2:  rgba(0,255,140,0.25);
+      --neon:   #00ff8c;
+      --neon2:  #00e5ff;
+      --dim:    #3d5166;
+      --muted:  #6b7f95;
+      --text:   #c8d8e8;
+      --white:  #e8f4ff;
+      --red:    #ff4d6d;
+      --amber:  #ffb703;
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--ink);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* ═══════════════════════════════════════════════
+       CUSTOM CURSOR
+    ═══════════════════════════════════════════════ */
+    #cursor-ring {
+      position: fixed;
+      width: 32px; height: 32px;
+      border: 1.5px solid var(--neon);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: width .2s, height .2s, border-color .2s, background .15s;
+      mix-blend-mode: difference;
+    }
+    #cursor-dot {
+      position: fixed;
+      width: 5px; height: 5px;
+      background: var(--neon);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+    }
+    body:has(a:hover) #cursor-ring,
+    body:has(button:hover) #cursor-ring,
+    body:has(.card:hover) #cursor-ring {
+      width: 56px; height: 56px;
+      border-color: var(--neon2);
+      background: rgba(0,229,255,0.05);
+    }
+
+    /* ═══════════════════════════════════════════════
+       NOISE + GRID OVERLAY
+    ═══════════════════════════════════════════════ */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+              linear-gradient(rgba(0,255,140,0.025) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(0,255,140,0.025) 1px, transparent 1px);
+      background-size: 64px 64px;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ═══════════════════════════════════════════════
+       SCAN LINE EFFECT
+    ═══════════════════════════════════════════════ */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+              0deg,
+              transparent,
+              transparent 2px,
+              rgba(0,0,0,0.08) 2px,
+              rgba(0,0,0,0.08) 4px
+      );
+      pointer-events: none;
+      z-index: 1;
+      animation: scanMove 12s linear infinite;
+    }
+    @keyframes scanMove {
+      0%   { background-position: 0 0; }
+      100% { background-position: 0 200px; }
+    }
+
+    /* ═══════════════════════════════════════════════
+       CANVAS BG
+    ═══════════════════════════════════════════════ */
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ═══════════════════════════════════════════════
+       LAYOUT
+    ═══════════════════════════════════════════════ */
+    .page {
+      position: relative;
+      z-index: 2;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 0 28px 100px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       NAV
+    ═══════════════════════════════════════════════ */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 18px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(to bottom, rgba(7,12,18,0.95), transparent);
+      backdrop-filter: blur(4px);
+    }
+    .nav-logo {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      color: var(--neon);
+      letter-spacing: 2px;
+      text-decoration: none;
+    }
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      transition: color .25s;
+      position: relative;
+    }
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      left: 0; bottom: -3px;
+      width: 0; height: 1px;
+      background: var(--neon);
+      transition: width .3s;
+    }
+    .nav-links a:hover { color: var(--neon); }
+    .nav-links a:hover::after { width: 100%; }
+
+    /* ═══════════════════════════════════════════════
+       HERO
+    ═══════════════════════════════════════════════ */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-top: 100px;
+      position: relative;
+    }
+
+    .hero-eyebrow {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 4px;
+      color: var(--neon);
+      text-transform: uppercase;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      opacity: 0;
+      animation: rise .7s .1s forwards;
+    }
+    .dot-pulse {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--neon);
+      animation: pulse-glow 2s infinite;
+      flex-shrink: 0;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0,255,140,.5); }
+      50%       { box-shadow: 0 0 0 8px rgba(0,255,140,0); }
+    }
+
+    .hero-name {
+      font-size: clamp(54px, 9vw, 108px);
+      font-weight: 800;
+      line-height: .9;
+      letter-spacing: -2px;
+      margin-bottom: 12px;
+      opacity: 0;
+      animation: rise .7s .25s forwards;
+    }
+    .hero-name .dim-part { color: var(--dim); }
+    .hero-name .bright-part { color: var(--white); }
+    .hero-name .accent { color: var(--neon); }
+
+    .hero-tag-line {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(12px, 1.5vw, 15px);
+      color: var(--muted);
+      margin-bottom: 40px;
+      height: 24px;
+      opacity: 0;
+      animation: rise .7s .4s forwards;
+    }
+    .hero-tag-line .cursor-blink {
+      display: inline-block;
+      width: 9px; height: 15px;
+      background: var(--neon);
+      margin-left: 3px;
+      vertical-align: middle;
+      animation: blink 1s infinite;
+    }
+
+    .hero-body {
+      max-width: 520px;
+      font-size: 15px;
+      line-height: 1.85;
+      color: var(--muted);
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: rise .7s .55s forwards;
+    }
+
+    .hero-quote {
+      border-left: 2px solid var(--neon);
+      padding: 10px 18px;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--neon);
+      opacity: .65;
+      margin-bottom: 44px;
+      max-width: 480px;
+      line-height: 1.7;
+      animation: rise .7s .65s forwards;
+      opacity: 0;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      opacity: 0;
+      animation: rise .7s .75s forwards;
+    }
+
+    .btn {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 12px 26px;
+      border: 1px solid var(--edge2);
+      background: transparent;
+      color: var(--neon);
+      cursor: none;
+      text-decoration: none;
+      border-radius: 3px;
+      transition: all .3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--neon);
+      transform: translateX(-101%);
+      transition: transform .3s;
+      z-index: -1;
+    }
+    .btn:hover { color: var(--ink); border-color: var(--neon); }
+    .btn:hover::before { transform: translateX(0); }
+
+    .btn-ghost {
+      color: var(--muted);
+      border-color: var(--edge);
+    }
+    .btn-ghost:hover { color: var(--white); border-color: var(--muted); }
+    .btn-ghost::before { background: rgba(255,255,255,.04); transform: none; opacity:0; transition:opacity .3s; }
+    .btn-ghost:hover::before { opacity:1; }
+
+    /* scroll hint */
+    .scroll-hint {
+      position: absolute;
+      bottom: 44px; left: 0;
+      display: flex; align-items: center; gap: 12px;
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: var(--dim);
+      opacity: 0;
+      animation: rise .7s 1.2s forwards;
+    }
+    .scroll-line {
+      width: 40px; height: 1px;
+      background: linear-gradient(to right, var(--neon), transparent);
+      animation: scrollPulse 2.5s ease-in-out infinite;
+    }
+    @keyframes scrollPulse {
+      0%, 100% { opacity: .3; width: 40px; }
+      50% { opacity: 1; width: 70px; }
+    }
+
+    /* ═══════════════════════════════════════════════
+       SECTION TEMPLATE
+    ═══════════════════════════════════════════════ */
+    .section {
+      margin-bottom: 100px;
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity .8s, transform .8s;
+    }
+    .section.in-view {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    .section-num {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--neon);
+      opacity: .5;
+    }
+    .section-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 4px;
+      color: var(--neon);
+      text-transform: uppercase;
+    }
+    .section-rule {
+      flex: 1;
+      height: 1px;
+      background: var(--edge);
+    }
+
+    /* ═══════════════════════════════════════════════
+       METRICS ROW
+    ═══════════════════════════════════════════════ */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      margin-bottom: 2px;
+    }
+    .metric {
+      background: var(--panel);
+      padding: 28px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .metric::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(to right, var(--neon), transparent);
+      opacity: 0;
+      transition: opacity .4s;
+    }
+    .metric:hover::before { opacity: 1; }
+    .metric-val {
+      font-family: 'Space Mono', monospace;
+      font-size: 40px;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1;
+      letter-spacing: -1px;
+    }
+    .metric-val .unit { font-size: 16px; color: var(--neon); margin-left: 2px; }
+    .metric-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: var(--dim);
+      text-transform: uppercase;
+      margin-top: 8px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       TECH STACK
+    ═══════════════════════════════════════════════ */
+    .stack-group + .stack-group { margin-top: 28px; }
+    .stack-group-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: var(--dim);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .stack-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .pill {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      padding: 8px 16px;
+      border: 1px solid var(--edge);
+      color: var(--muted);
+      border-radius: 2px;
+      background: var(--panel);
+      transition: all .3s;
+      cursor: default;
+      position: relative;
+      overflow: hidden;
+    }
+    .pill::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--neon);
+      transform: scale(0);
+      border-radius: 50%;
+      transition: transform .4s, opacity .4s;
+      opacity: .07;
+      transform-origin: center;
+    }
+    .pill:hover {
+      color: var(--neon);
+      border-color: var(--edge2);
+      transform: translateY(-2px);
+    }
+    .pill:hover::before { transform: scale(3); }
+
+    .pill.primary {
+      border-color: rgba(0,255,140,.3);
+      color: var(--neon);
+      background: rgba(0,255,140,.04);
+    }
+
+    /* ═══════════════════════════════════════════════
+       PROJECTS
+    ═══════════════════════════════════════════════ */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+    }
+    .card {
+      background: var(--panel);
+      padding: 32px 28px;
+      cursor: none;
+      text-decoration: none;
+      display: block;
+      position: relative;
+      overflow: hidden;
+      transition: background .3s;
+    }
+    .card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 100%; height: 2px;
+      background: var(--neon);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform .4s cubic-bezier(.4,0,.2,1);
+    }
+    .card:hover { background: rgba(17,27,40,.85); }
+    .card:hover::after { transform: scaleX(1); }
+
+    .card-type {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: var(--neon);
+      text-transform: uppercase;
+      opacity: .6;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 12px;
+      line-height: 1.2;
+      transition: color .3s;
+    }
+    .card:hover .card-title { color: var(--neon); }
+    .card-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.75;
+      margin-bottom: 24px;
+    }
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 1px;
+      padding: 3px 10px;
+      border: 1px solid var(--edge);
+      color: var(--dim);
+      border-radius: 2px;
+    }
+    .card-arrow {
+      position: absolute;
+      top: 28px; right: 28px;
+      font-size: 18px;
+      color: var(--dim);
+      transition: color .3s, transform .3s;
+    }
+    .card:hover .card-arrow {
+      color: var(--neon);
+      transform: translate(3px, -3px);
+    }
+
+    /* WIDE CARD */
+    .card.wide {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+    .card.wide .card-right {
+      padding-top: 4px;
+    }
+    .card.wide .card-feature-list {
+      list-style: none;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 2;
+    }
+    .card.wide .card-feature-list li::before {
+      content: '→  ';
+      color: var(--neon);
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       TERMINAL
+    ═══════════════════════════════════════════════ */
+    .terminal-wrap {
+      background: var(--ink2);
+      border: 1px solid var(--edge);
+      border-radius: 4px;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+    }
+    .terminal-bar {
+      background: var(--panel);
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--edge);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .tbar-dot { width: 11px; height: 11px; border-radius: 50%; }
+    .tbar-title {
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--dim);
+      margin-left: 8px;
+    }
+    .terminal-body {
+      padding: 24px 24px 28px;
+      font-size: 12px;
+      line-height: 2;
+    }
+    .t-prompt { color: var(--neon); }
+    .t-cmd    { color: var(--neon2); }
+    .t-path   { color: #a78bfa; }
+    .t-out    { color: var(--text); }
+    .t-out2   { color: var(--neon); }
+    .t-cursor {
+      display: inline-block;
+      width: 8px; height: 14px;
+      background: var(--neon);
+      vertical-align: middle;
+      margin-left: 2px;
+      animation: blink 1s infinite;
+    }
+
+    /* ═══════════════════════════════════════════════
+       CONTACT
+    ═══════════════════════════════════════════════ */
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+    }
+    .contact-card {
+      background: var(--panel);
+      padding: 24px 28px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      text-decoration: none;
+      transition: background .3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .contact-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 2px;
+      background: var(--neon);
+      transform: scaleY(0);
+      transition: transform .3s;
+    }
+    .contact-card:hover { background: rgba(0,255,140,.03); }
+    .contact-card:hover::before { transform: scaleY(1); }
+    .contact-icon {
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .contact-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: var(--muted);
+      transition: color .3s;
+    }
+    .contact-card:hover .contact-label { color: var(--neon); }
+    .contact-sub {
+      font-size: 11px;
+      color: var(--dim);
+      margin-top: 2px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       FOOTER
+    ═══════════════════════════════════════════════ */
+    footer {
+      padding: 40px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--edge);
+    }
+    footer .f-logo {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      color: var(--dim);
+    }
+    footer .f-note {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--dim);
+      letter-spacing: 2px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       ANIMATIONS
+    ═══════════════════════════════════════════════ */
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+
+    /* ═══════════════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════════════ */
+    @media (max-width: 700px) {
+      nav { padding: 14px 20px; }
+      .nav-links { gap: 18px; }
+      .page { padding: 0 18px 80px; }
+      .hero-name { font-size: clamp(44px, 13vw, 72px); letter-spacing: -1px; }
+      .metrics { grid-template-columns: 1fr 1fr; }
+      .metrics .metric:last-child { grid-column: 1 / -1; }
+      .projects-grid { grid-template-columns: 1fr; }
+      .card.wide { grid-template-columns: 1fr; }
+      .card.wide .card-right { padding-top: 0; }
+      .contact-grid { grid-template-columns: 1fr; }
+      footer { flex-direction: column; gap: 12px; text-align: center; }
+    }
+    @media (max-width: 480px) {
+      .nav-links { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div id="cursor-ring"></div>
+<div id="cursor-dot"></div>
+
+<!-- BG CANVAS -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">kuum-oss</a>
+  <ul class="nav-links">
+    <li><a href="#metrics">metrics</a></li>
+    <li><a href="#stack">stack</a></li>
+    <li><a href="#projects">projects</a></li>
+    <li><a href="#contact">contact</a></li>
+  </ul>
+</nav>
+
+<div class="page">
+
+  <!-- ── HERO ───────────────────────────────── -->
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="dot-pulse"></span>
+      available for collaboration · Ukraine 🇺🇦
+    </div>
+
+    <h1 class="hero-name">
+      <span class="dim-part">kuum</span><span class="accent">-</span><span class="bright-part">oss</span>
+    </h1>
+
+    <p class="hero-tag-line">
+      <span id="typing-el"></span><span class="cursor-blink"></span>
+    </p>
+
+    <p class="hero-body">
+      Java developer digging into desktop apps, OOP, and software engineering.
+      I focus on analyzing and stress-testing systems — understanding not just how things work,
+      but exactly how and where they break.
+    </p>
+
+    <blockquote class="hero-quote">
+      "Engineering is not only about how it works, but how it fails."
+    </blockquote>
+
+    <div class="hero-actions">
+      <a class="btn" href="https://github.com/kuum-oss" target="_blank">→ github profile</a>
+      <button class="btn btn-ghost" onclick="document.getElementById('projects').scrollIntoView({behavior:'smooth'})">view projects</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">contact</button>
+    </div>
+
+    <div class="scroll-hint">
+      <div class="scroll-line"></div>
+      scroll
+    </div>
+  </section>
+
+  <!-- ── METRICS ────────────────────────────── -->
+  <div class="section" id="metrics">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <span class="section-title">system metrics</span>
+      <div class="section-rule"></div>
+    </div>
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-val"><span id="m1">0</span><span class="unit">+</span></div>
+        <div class="metric-label">repositories</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val"><span id="m2">0</span><span class="unit">★</span></div>
+        <div class="metric-label">stars received</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val"><span id="m3">0</span></div>
+        <div class="metric-label">languages in stack</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STACK ──────────────────────────────── -->
+  <div class="section" id="stack">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <span class="section-title">tech arsenal</span>
+      <div class="section-rule"></div>
+    </div>
+
+    <div class="stack-group">
+      <div class="stack-group-label">core languages</div>
+      <div class="stack-pills">
+        <span class="pill primary">Java 21</span>
+        <span class="pill primary">Kotlin</span>
+        <span class="pill">Python</span>
+        <span class="pill">C / C++</span>
+        <span class="pill">TypeScript</span>
+      </div>
+    </div>
+
+    <div class="stack-group">
+      <div class="stack-group-label">data & infrastructure</div>
+      <div class="stack-pills">
+        <span class="pill">MySQL</span>
+        <span class="pill">PostgreSQL</span>
+        <span class="pill">Docker</span>
+        <span class="pill">Git</span>
+        <span class="pill">Gradle</span>
+        <span class="pill">Maven</span>
+      </div>
+    </div>
+
+    <div class="stack-group">
+      <div class="stack-group-label">tooling & testing</div>
+      <div class="stack-pills">
+        <span class="pill">Postman</span>
+        <span class="pill">JUnit</span>
+        <span class="pill">IntelliJ IDEA</span>
+        <span class="pill">VS Code</span>
+        <span class="pill">Linux / Bash</span>
+      </div>
+    </div>
+
+    <div class="stack-group">
+      <div class="stack-group-label">patterns & paradigms</div>
+      <div class="stack-pills">
+        <span class="pill">Clean Architecture</span>
+        <span class="pill">CQRS</span>
+        <span class="pill">Event Sourcing</span>
+        <span class="pill">Actor Model</span>
+        <span class="pill">OOP</span>
+        <span class="pill">Coroutines</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PROJECTS ───────────────────────────── -->
+  <div class="section" id="projects">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <span class="section-title">featured projects</span>
+      <div class="section-rule"></div>
+    </div>
+
+    <div class="projects-grid">
+
+      <!-- SOMEONE V2 — wide featured card -->
+      <a class="card wide" href="https://github.com/kuum-oss/someone_V2" target="_blank">
+        <div class="card-left">
+          <div class="card-type">desktop application · featured</div>
+          <div class="card-title">Smart Organizer</div>
+          <div class="card-desc">
+            Full-stack desktop library organizer built on Clean Architecture.
+            Handles metadata extraction, API integration, and filesystem edge cases — all in Java.
+          </div>
+          <div class="card-tags">
+            <span class="tag">Java 21</span>
+            <span class="tag">Swing</span>
+            <span class="tag">MySQL</span>
+            <span class="tag">Clean Arch</span>
+            <span class="tag">Tika</span>
+            <span class="tag">Google Books API</span>
+          </div>
+        </div>
+        <div class="card-right">
+          <ul class="card-feature-list">
+            <li>Tika-based metadata extraction</li>
+            <li>Google Books API integration</li>
+            <li>Multi-user library support</li>
+            <li>Drag & drop, search & filter</li>
+            <li>Theme & language switching</li>
+            <li>Filesystem DoS defences</li>
+          </ul>
+        </div>
+        <span class="card-arrow">↗</span>
+      </a>
+
+      <!-- KOT -->
+      <a class="card" href="https://github.com/kuum-oss/Kot" target="_blank">
+        <div class="card-type">distributed systems</div>
+        <div class="card-title">KotDistributed</div>
+        <div class="card-desc">
+          High-throughput distributed trading engine. Lock-free matching via Coroutines & Channels, fault-tolerant multi-node cluster simulation.
+        </div>
+        <div class="card-tags">
+          <span class="tag">Kotlin</span>
+          <span class="tag">Coroutines</span>
+          <span class="tag">CQRS</span>
+          <span class="tag">Event Sourcing</span>
+        </div>
+        <span class="card-arrow">↗</span>
+      </a>
+
+      <!-- PYT CAM -->
+      <a class="card" href="https://github.com/kuum-oss/Pyt_Cam" target="_blank">
+        <div class="card-type">computer vision</div>
+        <div class="card-title">Pyt_Cam</div>
+        <div class="card-desc">
+          Real-time posture tracking via webcam. Python-based CV tool for live body-posture monitoring and analysis.
+        </div>
+        <div class="card-tags">
+          <span class="tag">Python</span>
+          <span class="tag">OpenCV</span>
+          <span class="tag">CV</span>
+        </div>
+        <span class="card-arrow">↗</span>
+      </a>
+
+      <!-- EPUB TRANSLATOR -->
+      <a class="card" href="https://github.com/kuum-oss/epub_translator" target="_blank">
+        <div class="card-type">tool</div>
+        <div class="card-title">EPUB Translator</div>
+        <div class="card-desc">
+          Quick EPUB translator that preserves document structure and formatting, with a customizable correction map for fine-tuned output.
+        </div>
+        <div class="card-tags">
+          <span class="tag">Java</span>
+          <span class="tag">EPUB</span>
+        </div>
+        <span class="card-arrow">↗</span>
+      </a>
+
+      <!-- INK INSIGHTS -->
+      <a class="card" href="https://github.com/kuum-oss/ink-insights-dashboard" target="_blank" style="grid-column: 1 / -1;">
+        <div class="card-type">dashboard · typescript</div>
+        <div class="card-title">Ink Insights Dashboard</div>
+        <div class="card-desc">
+          E-Ink style reading progress dashboard. Tracks and visualises your reading habits in a minimal, distraction-free interface.
+        </div>
+        <div class="card-tags">
+          <span class="tag">TypeScript</span>
+          <span class="tag">Dashboard</span>
+          <span class="tag">E-Ink UI</span>
+        </div>
+        <span class="card-arrow">↗</span>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ── TERMINAL ───────────────────────────── -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <span class="section-title">system log</span>
+      <div class="section-rule"></div>
+    </div>
+    <div class="terminal-wrap">
+      <div class="terminal-bar">
+        <div class="tbar-dot" style="background:#ff5f57"></div>
+        <div class="tbar-dot" style="background:#febc2e"></div>
+        <div class="tbar-dot" style="background:#28c840"></div>
+        <span class="tbar-title">kuum-oss ~ profile.sh</span>
+      </div>
+      <div class="terminal-body" id="terminal-body">
+        <!-- filled by JS typewriter -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CONTACT ────────────────────────────── -->
+  <div class="section" id="contact">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <span class="section-title">secure channel</span>
+      <div class="section-rule"></div>
+    </div>
+    <div class="contact-grid">
+      <a class="contact-card" href="https://github.com/kuum-oss" target="_blank">
+        <span class="contact-icon">🐙</span>
+        <div>
+          <div class="contact-label">github.com/kuum-oss</div>
+          <div class="contact-sub">50 repositories · 11 stars</div>
+        </div>
+      </a>
+      <div class="contact-card">
+        <span class="contact-icon">📍</span>
+        <div>
+          <div class="contact-label">Ukraine 🇺🇦</div>
+          <div class="contact-sub">open to remote collaboration</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <span class="f-logo">kuum-oss</span>
+    <span class="f-note">ETHICAL · EDUCATIONAL · ALWAYS LEARNING</span>
+  </footer>
+
+</div>
+
+<script>
+  /* ═══════════════════════════════════════════════
+     CURSOR
+  ═══════════════════════════════════════════════ */
+  const ring = document.getElementById('cursor-ring');
+  const dot  = document.getElementById('cursor-dot');
+  let mx = -200, my = -200;
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    dot.style.left = mx + 'px';
+    dot.style.top  = my + 'px';
+  });
+  function moveCursor() {
+    ring.style.left = mx + 'px';
+    ring.style.top  = my + 'px';
+    requestAnimationFrame(moveCursor);
+  }
+  moveCursor();
+
+  /* ═══════════════════════════════════════════════
+     BACKGROUND CANVAS — particle field
+  ═══════════════════════════════════════════════ */
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+
+  function initCanvas() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    particles = Array.from({length: 90}, () => ({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 1.4 + .3,
+      vx: (Math.random() - .5) * .18,
+      vy: (Math.random() - .5) * .18,
+      o: Math.random() * .6 + .1,
+      to: Math.random() * .6 + .1
+    }));
+  }
+
+  function drawCanvas() {
+    ctx.clearRect(0, 0, W, H);
+
+    // draw connections
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i+1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const d  = Math.sqrt(dx*dx + dy*dy);
+        if (d < 110) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(0,255,140,${(1 - d/110) * .1})`;
+          ctx.lineWidth = .5;
+          ctx.stroke();
+        }
+      }
+    }
+
+    // draw particles
+    particles.forEach(p => {
+      p.o += (p.to - p.o) * .02;
+      if (Math.random() < .005) p.to = Math.random() * .6 + .1;
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W;
+      if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H;
+      if (p.y > H) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0,255,140,${p.o})`;
+      ctx.fill();
+    });
+
+    requestAnimationFrame(drawCanvas);
+  }
+  initCanvas();
+  window.addEventListener('resize', initCanvas);
+  drawCanvas();
+
+  /* ═══════════════════════════════════════════════
+     HERO TYPING
+  ═══════════════════════════════════════════════ */
+  const phrases = [
+    'Java Developer',
+    'Systems Stress-Tester',
+    'Bug Hunter Extraordinaire',
+    'Code Stalker 🐙',
+    'Always Learning'
+  ];
+  let pi = 0, ci = 0, del = false, txt = '';
+  const typEl = document.getElementById('typing-el');
+
+  function typeHero() {
+    const p = phrases[pi];
+    if (!del) {
+      txt = p.slice(0, ++ci);
+      if (ci === p.length) { del = true; setTimeout(typeHero, 1600); return; }
+    } else {
+      txt = p.slice(0, --ci);
+      if (ci === 0) { del = false; pi = (pi + 1) % phrases.length; }
+    }
+    typEl.textContent = txt;
+    setTimeout(typeHero, del ? 38 : 75);
+  }
+  typeHero();
+
+  /* ═══════════════════════════════════════════════
+     INTERSECTION OBSERVER — section reveal
+  ═══════════════════════════════════════════════ */
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) e.target.classList.add('in-view');
+    });
+  }, { threshold: .08 });
+  document.querySelectorAll('.section').forEach(s => obs.observe(s));
+
+  /* ═══════════════════════════════════════════════
+     COUNT-UP METRICS
+  ═══════════════════════════════════════════════ */
+  function countUp(id, target, dur) {
+    const el = document.getElementById(id);
+    const start = performance.now();
+    function tick(now) {
+      const t = Math.min((now - start) / dur, 1);
+      const ease = 1 - Math.pow(1 - t, 3); // ease out cubic
+      el.textContent = Math.round(ease * target);
+      if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+  const mObs = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) {
+      countUp('m1', 50, 1400);
+      countUp('m2', 11, 1000);
+      countUp('m3', 8,  800);
+      mObs.disconnect();
+    }
+  }, { threshold: .3 });
+  mObs.observe(document.getElementById('metrics'));
+
+  /* ═══════════════════════════════════════════════
+     TERMINAL TYPEWRITER
+  ═══════════════════════════════════════════════ */
+  const lines = [
+    { html: '<span class="t-prompt">$</span> <span class="t-cmd">whoami</span>', delay: 200 },
+    { html: '<span class="t-out">→ kuum-oss &nbsp;<span style="color:#fbbf24">🐙 Code Stalker 🚩</span></span>', delay: 350 },
+    { html: '', delay: 120 },
+    { html: '<span class="t-prompt">$</span> <span class="t-cmd">cat</span> <span class="t-path">mission.txt</span>', delay: 350 },
+    { html: '<span class="t-out">→ Analyzing and stress-testing systems.</span>', delay: 200 },
+    { html: '<span class="t-out">  Ethical. Educational. Always learning.</span>', delay: 200 },
+    { html: '', delay: 120 },
+    { html: '<span class="t-prompt">$</span> <span class="t-cmd">ls</span> <span class="t-path">./interests/</span>', delay: 350 },
+    { html: '<span class="t-out">→ distributed-systems/ &nbsp;desktop-apps/ &nbsp;algorithms/</span>', delay: 200 },
+    { html: '<span class="t-out">  performance-sre/ &nbsp;&nbsp;&nbsp;&nbsp;high-load/ &nbsp;&nbsp;&nbsp;&nbsp;open-source/</span>', delay: 200 },
+    { html: '', delay: 120 },
+    { html: '<span class="t-prompt">$</span> <span class="t-cmd">cat</span> <span class="t-path">philosophy.txt</span>', delay: 350 },
+    { html: '<span class="t-out2">→ "Every bug, crash, or stress-test is a lesson."</span>', delay: 200 },
+    { html: '<span class="t-out2">  "I build robust software and learn from every breaking point."</span>', delay: 300 },
+    { html: '', delay: 120 },
+    { html: '<span class="t-prompt">$</span> <span class="t-cursor"></span>', delay: 0 },
+  ];
+
+  const termBody = document.getElementById('terminal-body');
+  let termStarted = false;
+
+  function runTerminal() {
+    if (termStarted) return;
+    termStarted = true;
+    let total = 0;
+    lines.forEach((line, i) => {
+      total += (i > 0 ? lines[i-1].delay : 0) + 100;
+      setTimeout(() => {
+        const d = document.createElement('div');
+        d.innerHTML = line.html;
+        termBody.appendChild(d);
+      }, total);
+    });
+  }
+
+  const termObs = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) { runTerminal(); termObs.disconnect(); }
+  }, { threshold: .2 });
+  termObs.observe(document.querySelector('.terminal-wrap'));
+
+</script>
+</body>
+</html>
