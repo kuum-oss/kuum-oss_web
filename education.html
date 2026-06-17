@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>kuum-oss // edu & experience</title>
+    <meta name="description" content="kuum-oss — education and experience roadmap: from Python foundations to systems engineering coursework, Harvard CS50, and freelance delivery.">
+    <meta property="og:title" content="kuum-oss // edu & experience">
+    <meta property="og:description" content="Education and experience roadmap of a systems engineer in progress.">
+    <meta property="og:type" content="website">
+    <meta name="theme-color" content="#030914">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23030914'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='18' fill='%2300a2ff' text-anchor='middle'%3E%3E_%3C/text%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -67,6 +73,18 @@
             width: 56px; height: 56px;
             border-color: var(--neon2);
             background: rgba(0, 240, 255, 0.05);
+        }
+
+        /* Touch / coarse-pointer devices: no custom cursor, use native one */
+        @media (hover: none), (pointer: coarse) {
+            body, .btn, .card, .pill { cursor: auto; }
+            #cursor-ring, #cursor-dot { display: none; }
+        }
+
+        /* Visible focus state for keyboard navigation */
+        a:focus-visible, button:focus-visible {
+            outline: 1.5px solid var(--neon);
+            outline-offset: 3px;
         }
 
         /* ═══════════════════════════════════════════════
@@ -484,6 +502,22 @@
             transform: translate(3px, -3px);
         }
 
+        .card-glyph {
+            position: absolute;
+            bottom: -14px; right: -6px;
+            font-family: 'Space Mono', monospace;
+            font-size: 88px;
+            font-weight: 700;
+            color: var(--text);
+            opacity: .03;
+            line-height: 1;
+            pointer-events: none;
+            transition: opacity .4s, transform .4s;
+            user-select: none;
+        }
+        .card:hover .card-glyph { opacity: .06; transform: translateY(-4px); }
+        .card.wide .card-glyph { font-size: 120px; }
+
         /* WIDE CARD */
         .card.wide {
             grid-column: 1 / -1;
@@ -491,7 +525,12 @@
             grid-template-columns: 1fr 1fr;
             gap: 28px;
             align-items: start;
+            border: 1px solid rgba(112, 0, 255, 0.18);
         }
+        .card.wide::after { background: var(--purple); }
+        .card.wide .card-type { color: var(--purple); opacity: 1; }
+        .card.wide:hover .card-title { color: var(--purple); }
+        .card.wide:hover .card-arrow { color: var(--purple); }
         .card.wide .card-right {
             padding-top: 4px;
         }
@@ -503,7 +542,7 @@
         }
         .card.wide .card-feature-list li::before {
             content: '⚡ ';
-            color: var(--neon);
+            color: var(--purple);
             font-family: 'Space Mono', monospace;
             font-size: 11px;
         }
@@ -598,9 +637,21 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 20px;
             border-top: 1px solid var(--edge);
+            flex-wrap: wrap;
         }
         footer .f-logo { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--dim); }
+        footer .f-status {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 1px;
+            color: var(--dim);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        footer .f-status #f-progress { color: var(--neon); }
         footer .f-note { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--dim); letter-spacing: 2px; }
 
         @keyframes rise {
@@ -639,7 +690,7 @@
     <a class="nav-logo" href="#">kuum-edu</a>
     <ul class="nav-links">
         <li><a href="index.html" class="link-main">main</a></li>
-        <li><a href="education.html" class="link-edu">edu</a></li>
+        <li><a href="education.html" class="link-edu" aria-current="page">edu</a></li>
         <li><a href="#vector">vector</a></li>
         <li><a href="#milestones">milestones</a></li>
         <li><a href="#log">system log</a></li>
@@ -715,6 +766,7 @@
                     <span class="tag">Scripts</span>
                     <span class="tag">Logic Foundations</span>
                 </div>
+                <span class="card-glyph" aria-hidden="true">{}</span>
             </div>
 
             <!-- 2. IT School C# -->
@@ -730,6 +782,7 @@
                     <span class="tag">Game AI</span>
                     <span class="tag">Game Dev</span>
                 </div>
+                <span class="card-glyph" aria-hidden="true">◎</span>
             </div>
 
             <!-- 3. College (Wide) -->
@@ -754,6 +807,7 @@
                         <li>Complex software development</li>
                     </ul>
                 </div>
+                <span class="card-glyph" aria-hidden="true">▤</span>
             </div>
 
             <!-- 4. Extra Education -->
@@ -768,6 +822,7 @@
                     <span class="tag">Oxford OpenEdu</span>
                     <span class="tag">Advanced Algorithms</span>
                 </div>
+                <span class="card-glyph" aria-hidden="true">∑</span>
             </div>
 
             <!-- 5. Unofficial Employment -->
@@ -782,6 +837,7 @@
                     <span class="tag">Agile Shift</span>
                     <span class="tag">No-Border Dev</span>
                 </div>
+                <span class="card-glyph" aria-hidden="true">⌁</span>
             </div>
 
             <!-- 6. Freelance (Wide) -->
@@ -806,6 +862,7 @@
                         <li>Guaranteed high code performance</li>
                     </ul>
                 </div>
+                <span class="card-glyph" aria-hidden="true">⚡</span>
             </div>
 
         </div>
@@ -834,12 +891,15 @@
     <!-- FOOTER -->
     <footer>
         <span class="f-logo">kuum-oss // edu</span>
+        <span class="f-status"><span class="dot-pulse" style="width:5px;height:5px;"></span>milestones: <span id="f-progress">—</span></span>
         <span class="f-note">SYSTEM · DEVELOPMENT · STRICT DEADLINES</span>
     </footer>
 
 </div>
 
 <script>
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     /* ═══════════════════════════════════════════════
        CURSOR LOGIC
     ═══════════════════════════════════════════════ */
@@ -856,7 +916,7 @@
         ring.style.top  = my + 'px';
         requestAnimationFrame(moveCursor);
     }
-    moveCursor();
+    if (!reducedMotion) moveCursor();
 
     /* ═══════════════════════════════════════════════
        BACKGROUND CANVAS — BLUE PARTICLE NETWORK
@@ -864,11 +924,12 @@
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
     let W, H, particles = [];
+    const particleCount = window.innerWidth < 700 ? 32 : 80;
 
     function initCanvas() {
         W = canvas.width = window.innerWidth;
         H = canvas.height = window.innerHeight;
-        particles = Array.from({length: 80}, () => ({
+        particles = Array.from({length: particleCount}, () => ({
             x: Math.random() * W,
             y: Math.random() * H,
             r: Math.random() * 1.5 + .3,
@@ -912,7 +973,7 @@
     }
     initCanvas();
     window.addEventListener('resize', initCanvas);
-    drawCanvas();
+    if (!reducedMotion) drawCanvas();
 
     /* ═══════════════════════════════════════════════
        HERO TYPING PHRASES
@@ -1017,6 +1078,14 @@
     }, { threshold: .2 });
     termObs.observe(document.querySelector('.terminal-wrap'));
 
+    /* ═══════════════════════════════════════════════
+       FOOTER PROGRESS (mirrors milestones metric)
+    ═══════════════════════════════════════════════ */
+    (function(){
+        const el = document.getElementById('f-progress');
+        if (!el) return;
+        el.textContent = '6/6';
+    })();
+
 </script>
 </body>
-
