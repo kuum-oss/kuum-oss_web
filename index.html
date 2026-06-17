@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>kuum-oss // systems engineer</title>
+  <meta name="description" content="kuum-oss — Java developer focused on systems stress-testing, performance engineering, and clean architecture. Open to remote collaboration.">
+  <meta property="og:title" content="kuum-oss // systems engineer">
+  <meta property="og:description" content="Java developer focused on systems stress-testing, performance engineering, and clean architecture.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#070c12">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23070c12'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='18' fill='%2300ff8c' text-anchor='middle'%3E%3E_%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -67,6 +73,18 @@
       width: 56px; height: 56px;
       border-color: var(--neon2);
       background: rgba(0,229,255,0.05);
+    }
+
+    /* Touch / coarse-pointer devices: no custom cursor, use native one */
+    @media (hover: none), (pointer: coarse) {
+      body, .btn, .card, .pill { cursor: auto; }
+      #cursor-ring, #cursor-dot { display: none; }
+    }
+
+    /* Visible focus state for keyboard navigation */
+    a:focus-visible, button:focus-visible {
+      outline: 1.5px solid var(--neon);
+      outline-offset: 3px;
     }
 
     /* ═══════════════════════════════════════════════
@@ -559,6 +577,22 @@
       transform: translate(3px, -3px);
     }
 
+    .card-glyph {
+      position: absolute;
+      bottom: -14px; right: -6px;
+      font-family: 'Space Mono', monospace;
+      font-size: 88px;
+      font-weight: 700;
+      color: var(--text);
+      opacity: .03;
+      line-height: 1;
+      pointer-events: none;
+      transition: opacity .4s, transform .4s;
+      user-select: none;
+    }
+    .card:hover .card-glyph { opacity: .06; transform: translateY(-4px); }
+    .card.wide .card-glyph { font-size: 120px; }
+
     /* WIDE CARD */
     .card.wide {
       grid-column: 1 / -1;
@@ -566,7 +600,13 @@
       grid-template-columns: 1fr 1fr;
       gap: 28px;
       align-items: start;
+      border: 1px solid rgba(255,183,3,0.14);
     }
+    .card.wide::after { background: var(--amber); }
+    .card.wide .card-type { color: var(--amber); }
+    .card.wide:hover .card-title { color: var(--amber); }
+    .card.wide:hover .card-arrow { color: var(--amber); }
+    .card.wide .card-feature-list li::before { color: var(--amber); }
     .card.wide .card-right {
       padding-top: 4px;
     }
@@ -576,9 +616,11 @@
       color: var(--muted);
       line-height: 2;
     }
+    .card-feature-list li::before {
+      color: var(--neon);
+    }
     .card.wide .card-feature-list li::before {
       content: '→  ';
-      color: var(--neon);
       font-family: 'Space Mono', monospace;
       font-size: 11px;
     }
@@ -683,13 +725,25 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 20px;
       border-top: 1px solid var(--edge);
+      flex-wrap: wrap;
     }
     footer .f-logo {
       font-family: 'Space Mono', monospace;
       font-size: 12px;
       color: var(--dim);
     }
+    footer .f-status {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: var(--dim);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    footer .f-status #f-uptime { color: var(--neon); }
     footer .f-note {
       font-family: 'Space Mono', monospace;
       font-size: 10px;
@@ -780,7 +834,7 @@
     </p>
 
     <blockquote class="hero-quote">
-      "Engineering is not only about how it works, but how it fails."
+      "Every breaking point is a lesson — robustness is earned, not assumed."
     </blockquote>
 
     <div class="hero-actions">
@@ -912,6 +966,7 @@
           </ul>
         </div>
         <span class="card-arrow">↗</span>
+        <span class="card-glyph" aria-hidden="true">{}</span>
       </a>
 
       <!-- KOT -->
@@ -928,6 +983,7 @@
           <span class="tag">Event Sourcing</span>
         </div>
         <span class="card-arrow">↗</span>
+        <span class="card-glyph" aria-hidden="true">⇄</span>
       </a>
 
       <!-- PYT CAM -->
@@ -943,6 +999,7 @@
           <span class="tag">CV</span>
         </div>
         <span class="card-arrow">↗</span>
+        <span class="card-glyph" aria-hidden="true">◎</span>
       </a>
 
       <!-- EPUB TRANSLATOR -->
@@ -957,6 +1014,7 @@
           <span class="tag">EPUB</span>
         </div>
         <span class="card-arrow">↗</span>
+        <span class="card-glyph" aria-hidden="true">¶</span>
       </a>
 
       <!-- INK INSIGHTS -->
@@ -972,6 +1030,7 @@
           <span class="tag">E-Ink UI</span>
         </div>
         <span class="card-arrow">↗</span>
+        <span class="card-glyph" aria-hidden="true">▤</span>
       </a>
 
       <!-- SOL — wide featured card -->
@@ -1003,6 +1062,7 @@
           </ul>
         </div>
         <span class="card-arrow">↗</span>
+        <span class="card-glyph" aria-hidden="true">≈</span>
       </a>
 
     </div>
@@ -1036,15 +1096,15 @@
       <div class="section-rule"></div>
     </div>
     <div class="contact-grid">
-      <a class="contact-card" href="https://github.com/kuum-oss" target="_blank">
-        <span class="contact-icon">🐙</span>
+      <a class="contact-card" href="https://github.com/kuum-oss" target="_blank" aria-label="GitHub profile, kuum-oss, 50 repositories, 11 stars">
+        <span class="contact-icon" aria-hidden="true">🐙</span>
         <div>
           <div class="contact-label">github.com/kuum-oss</div>
           <div class="contact-sub">50 repositories · 11 stars</div>
         </div>
       </a>
       <div class="contact-card">
-        <span class="contact-icon">📍</span>
+        <span class="contact-icon" aria-hidden="true">📍</span>
         <div>
           <div class="contact-label">Ukraine 🇺🇦</div>
           <div class="contact-sub">open to remote collaboration</div>
@@ -1056,12 +1116,15 @@
   <!-- FOOTER -->
   <footer>
     <span class="f-logo">kuum-oss</span>
+    <span class="f-status"><span class="dot-pulse" style="width:5px;height:5px;"></span>uptime: <span id="f-uptime">—</span></span>
     <span class="f-note">ETHICAL · EDUCATIONAL · ALWAYS LEARNING</span>
   </footer>
 
 </div>
 
 <script>
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   /* ═══════════════════════════════════════════════
      CURSOR
   ═══════════════════════════════════════════════ */
@@ -1078,7 +1141,7 @@
     ring.style.top  = my + 'px';
     requestAnimationFrame(moveCursor);
   }
-  moveCursor();
+  if (!reducedMotion) moveCursor();
 
   /* ═══════════════════════════════════════════════
      BACKGROUND CANVAS — particle field
@@ -1086,11 +1149,12 @@
   const canvas = document.getElementById('bg-canvas');
   const ctx = canvas.getContext('2d');
   let W, H, particles = [];
+  const particleCount = window.innerWidth < 700 ? 36 : 90;
 
   function initCanvas() {
     W = canvas.width = window.innerWidth;
     H = canvas.height = window.innerHeight;
-    particles = Array.from({length: 90}, () => ({
+    particles = Array.from({length: particleCount}, () => ({
       x: Math.random() * W,
       y: Math.random() * H,
       r: Math.random() * 1.4 + .3,
@@ -1140,7 +1204,7 @@
   }
   initCanvas();
   window.addEventListener('resize', initCanvas);
-  drawCanvas();
+  if (!reducedMotion) drawCanvas();
 
   /* ═══════════════════════════════════════════════
      HERO TYPING
@@ -1246,6 +1310,17 @@
     if (entries[0].isIntersecting) { runTerminal(); termObs.disconnect(); }
   }, { threshold: .2 });
   termObs.observe(document.querySelector('.terminal-wrap'));
+
+  /* ═══════════════════════════════════════════════
+     FOOTER UPTIME
+  ═══════════════════════════════════════════════ */
+  (function(){
+    const start = new Date('2023-09-04T00:00:00Z').getTime();
+    const el = document.getElementById('f-uptime');
+    if (!el) return;
+    const days = Math.floor((Date.now() - start) / 86400000);
+    el.textContent = days + 'd';
+  })();
 
 </script>
 </body>
