@@ -625,6 +625,49 @@
       font-size: 11px;
     }
 
+    /* ── card action buttons (sol preview) ── */
+    .card-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+    .card-btn {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 9px 20px;
+      border: 1px solid var(--edge2);
+      background: transparent;
+      color: var(--neon);
+      cursor: none;
+      text-decoration: none;
+      border-radius: 2px;
+      transition: all .3s;
+      position: relative;
+      overflow: hidden;
+      z-index: 2;
+    }
+    .card-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--neon);
+      transform: translateX(-101%);
+      transition: transform .3s;
+      z-index: -1;
+    }
+    .card-btn:hover { color: var(--ink); border-color: var(--neon); }
+    .card-btn:hover::before { transform: translateX(0); }
+    .card-btn.ghost {
+      color: var(--muted);
+      border-color: var(--edge);
+    }
+    .card-btn.ghost::before { background: rgba(255,255,255,.04); transform: none; opacity: 0; transition: opacity .3s; }
+    .card-btn.ghost:hover { color: var(--white); border-color: var(--muted); }
+    .card-btn.ghost:hover::before { opacity: 1; }
+
     /* ═══════════════════════════════════════════════
        TERMINAL
     ═══════════════════════════════════════════════ */
@@ -1034,7 +1077,7 @@
       </a>
 
       <!-- SOL — wide featured card -->
-      <a class="card wide" href="https://github.com/kuum-oss/sol" target="_blank">
+      <div class="card wide" style="cursor:default">
         <div class="card-left">
           <div class="card-type">performance engineering · featured</div>
           <div class="card-title">sol</div>
@@ -1050,6 +1093,10 @@
             <span class="tag">Prometheus</span>
             <span class="tag">Grafana</span>
           </div>
+          <div class="card-actions">
+            <a class="card-btn" href="sol.html">→ case study</a>
+            <a class="card-btn ghost" href="https://github.com/kuum-oss/sol" target="_blank" rel="noopener">↗ github</a>
+          </div>
         </div>
         <div class="card-right">
           <ul class="card-feature-list">
@@ -1061,9 +1108,8 @@
             <li>Dockerized infra: Postgres, Redis, InfluxDB, Grafana</li>
           </ul>
         </div>
-        <span class="card-arrow">↗</span>
         <span class="card-glyph" aria-hidden="true">≈</span>
-      </a>
+      </div>
 
     </div>
   </div>

@@ -1,5 +1,5 @@
 {
-  "name": "${PROJECT_NAME}",
+  "name": "kuum-oss_web",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
