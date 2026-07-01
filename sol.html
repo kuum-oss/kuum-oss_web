@@ -507,6 +507,8 @@
         <li><a href="#architecture">arch</a></li>
         <li><a href="#evidence">tests</a></li>
         <li><a href="#benchmarks">numbers</a></li>
+        <li><a href="#quickstart">start</a></li>
+        <li><a href="#chaos-results">chaos</a></li>
         <li><a href="https://github.com/kuum-oss/sol" target="_blank" rel="noopener">→ github</a></li>
         <li><a class="back" href="https://kuum-oss.github.io/kuum-oss_web/">← back</a></li>
     </ul>
@@ -927,6 +929,191 @@
         </div>
     </div>
 
+    <!-- ── QUICK START ───────────────────────── -->
+    <div class="section" id="quickstart">
+        <div class="section-header">
+            <span class="section-num">06</span>
+            <span class="section-title">quick start</span>
+            <div class="section-rule"></div>
+        </div>
+        <div class="tier-grid" style="grid-template-columns:1fr 1fr 1fr; margin-bottom:2px;">
+            <div class="tier-card">
+                <div class="tier-num">STEP 1 · CLONE</div>
+                <div class="tier-name">Setup</div>
+                <div class="tier-tech">Java 21 · Gradle · Docker</div>
+                <ul class="tier-list">
+                    <li>git clone kuum-oss/sol</li>
+                    <li>docker compose up -d</li>
+                    <li>7 containers start automatically</li>
+                    <li>Grafana → :3000 · Prometheus → :9090</li>
+                </ul>
+                <div class="tier-glyph">1</div>
+            </div>
+            <div class="tier-card">
+                <div class="tier-num">STEP 2 · BENCHMARKS</div>
+                <div class="tier-name">JMH · Tier I</div>
+                <div class="tier-tech">creates local baseline automatically</div>
+                <ul class="tier-list">
+                    <li>./gradlew :performance-tests:benchmarks:runBenchmarks</li>
+                    <li>results → reports/jmh_results.json</li>
+                    <li>regression vs baseline printed inline</li>
+                    <li>threshold: 10% drop → build fails</li>
+                </ul>
+                <div class="tier-glyph">2</div>
+            </div>
+            <div class="tier-card">
+                <div class="tier-num">STEP 3 · LOAD + CHAOS</div>
+                <div class="tier-name">Gatling · Chaos · Tier II–III</div>
+                <div class="tier-tech">target-app managed automatically</div>
+                <ul class="tier-list">
+                    <li>./gradlew :performance-tests:load-tests:runLoadTest -Dprofile=smoke</li>
+                    <li>app boots via bootJar — no manual start needed</li>
+                    <li>profiles: smoke / load / stress / soak / spike</li>
+                    <li>./gradlew :performance-tests:chaos-tests:test</li>
+                </ul>
+                <div class="tier-glyph">3</div>
+            </div>
+        </div>
+        <div class="terminal-wrap">
+            <div class="terminal-bar">
+                <div class="tbar-dot" style="background:#ff5f57"></div>
+                <div class="tbar-dot" style="background:#febc2e"></div>
+                <div class="tbar-dot" style="background:#28c840"></div>
+                <span class="tbar-title">terminal · full run sequence</span>
+            </div>
+            <div class="terminal-body">
+                <div><span class="t-prompt">$</span> <span class="t-cmd">git clone</span> <span class="t-path">https://github.com/kuum-oss/sol</span> &amp;&amp; cd sol</div>
+                <div><span class="t-prompt">$</span> <span class="t-cmd">cd</span> <span class="t-path">performance-tests/infra</span></div>
+
+                <div><span class="t-prompt">$</span> <span class="t-cmd">docker compose</span> <span class="t-path">up -d</span></div>
+                <div><span class="t-dim">  [+] Running 7/7 — postgres · redis · toxiproxy · influxdb · prometheus · grafana · sol-app</span></div>
+                <div>&nbsp;</div>
+
+                <div><span class="t-dim">  # Tier I — JMH microbenchmarks</span></div>
+                <div><span class="t-prompt">$</span> <span class="t-cmd">./gradlew</span> <span class="t-path">:performance-tests:benchmarks:runBenchmarks</span></div>
+                <div><span class="t-ok">  ✓</span> <span class="t-out">BUILD SUCCESSFUL in 3m 30s</span></div>
+                <div>&nbsp;</div>
+
+                <div><span class="t-dim">  # Tier II — Gatling load test (app starts/stops automatically)</span></div>
+                <div><span class="t-prompt">$</span> <span class="t-cmd">./gradlew</span> <span class="t-path">:performance-tests:load-tests:runLoadTest -Dprofile=smoke</span></div>
+                <div><span class="t-ok">  ✓</span> <span class="t-out">Global: 99th percentile &lt; 3000ms · 0.0% KO — BUILD SUCCESSFUL in 19s</span></div>
+                <div>&nbsp;</div>
+
+                <div><span class="t-dim">  # Tier III — Chaos engineering</span></div>
+                <div><span class="t-prompt">$</span> <span class="t-cmd">./gradlew</span> <span class="t-path">:performance-tests:chaos-tests:test</span></div>
+                <div><span class="t-ok">  ✓</span> <span class="t-out">BUILD SUCCESSFUL in 43s · Graceful shutdown complete</span></div>
+                <div><span class="t-prompt">$</span> <span class="t-cursor"></span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── CHAOS RESULTS ─────────────────────── -->
+    <div class="section" id="chaos-results">
+        <div class="section-header">
+            <span class="section-num">07</span>
+            <span class="section-title">chaos results</span>
+            <div class="section-rule"></div>
+        </div>
+
+        <div class="terminal-wrap" style="margin-bottom:2px;">
+            <div class="terminal-bar">
+                <div class="tbar-dot" style="background:#ff5f57"></div>
+                <div class="tbar-dot" style="background:#febc2e"></div>
+                <div class="tbar-dot" style="background:#28c840"></div>
+                <span class="tbar-title">chaos scenarios · verified results</span>
+            </div>
+            <div class="terminal-body" style="padding:0">
+                <table class="bench-table">
+                    <thead>
+                    <tr>
+                        <th>scenario</th>
+                        <th>tool</th>
+                        <th>fault injected</th>
+                        <th>expected behaviour</th>
+                        <th>result</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td class="t-name">DB latency injection</td>
+                        <td class="t-dim">Toxiproxy</td>
+                        <td class="t-out">+300ms on postgres:5432</td>
+                        <td class="t-out">Resilience4j timeout → fallback</td>
+                        <td class="t-up">✓ PASS</td>
+                    </tr>
+                    <tr>
+                        <td class="t-name">Cache blackout</td>
+                        <td class="t-dim">Toxiproxy</td>
+                        <td class="t-out">Redis:6379 connection cut</td>
+                        <td class="t-out">Circuit breaker OPEN → in-memory fallback</td>
+                        <td class="t-up">✓ PASS</td>
+                    </tr>
+                    <tr>
+                        <td class="t-name">Downstream HTTP delay</td>
+                        <td class="t-dim">Toxiproxy</td>
+                        <td class="t-out">OkHttp target +500ms</td>
+                        <td class="t-out">Bulkhead isolates · retry policy fires</td>
+                        <td class="t-up">✓ PASS</td>
+                    </tr>
+                    <tr>
+                        <td class="t-name">Heap pressure / GC stress</td>
+                        <td class="t-dim">Chaos Monkey</td>
+                        <td class="t-out">Memory watcher assault</td>
+                        <td class="t-out">GC reclaims · latency spike &lt; SLA</td>
+                        <td class="t-up">✓ PASS</td>
+                    </tr>
+                    <tr>
+                        <td class="t-name">Pod kill / shutdown</td>
+                        <td class="t-dim">Chaos Monkey</td>
+                        <td class="t-out">Random instance kill</td>
+                        <td class="t-out">Tomcat GracefulShutdown · 0 lost requests</td>
+                        <td class="t-up">✓ PASS</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="metrics" style="grid-template-columns:repeat(4,1fr)">
+            <div class="metric">
+                <div class="metric-val" style="color:var(--neon)">5</div>
+                <div class="metric-label">chaos scenarios</div>
+            </div>
+            <div class="metric">
+                <div class="metric-val" style="color:var(--neon)">5</div>
+                <div class="metric-label">passed</div>
+            </div>
+            <div class="metric">
+                <div class="metric-val">43<span class="unit">s</span></div>
+                <div class="metric-label">total run time</div>
+            </div>
+            <div class="metric">
+                <div class="metric-val" style="color:var(--neon)">0</div>
+                <div class="metric-label">lost requests</div>
+            </div>
+        </div>
+
+        <div class="terminal-wrap" style="margin-top:2px;">
+            <div class="terminal-bar">
+                <div class="tbar-dot" style="background:#ff5f57"></div>
+                <div class="tbar-dot" style="background:#febc2e"></div>
+                <div class="tbar-dot" style="background:#28c840"></div>
+                <span class="tbar-title">./gradlew :performance-tests:chaos-tests:test · actual output</span>
+            </div>
+            <div class="terminal-body">
+                <div><span class="t-dim">OpenJDK 64-Bit Server VM — Sharing boot loader classes</span></div>
+                <div><span class="t-out">2026-07-01T16:59:28  INFO [target-app] [ionShutdownHook]</span></div>
+                <div><span class="t-out">&nbsp;&nbsp;&nbsp;&nbsp;o.s.b.w.e.tomcat.GracefulShutdown : Commencing graceful shutdown. Waiting for active requests...</span></div>
+                <div><span class="t-out">2026-07-01T16:59:28  INFO [target-app] [tomcat-shutdown]</span></div>
+                <div><span class="t-out">&nbsp;&nbsp;&nbsp;&nbsp;o.s.b.w.e.tomcat.GracefulShutdown : <span class="t-ok">Graceful shutdown complete</span></span></div>
+                <div>&nbsp;</div>
+                <div><span class="t-ok">BUILD SUCCESSFUL</span> <span class="t-dim">in 43s</span></div>
+                <div><span class="t-dim">5 actionable tasks: 4 executed, 1 up-to-date</span></div>
+                <div><span class="t-prompt">$</span> <span class="t-cursor"></span></div>
+            </div>
+        </div>
+    </div>
+
     <!-- FOOTER -->
     <footer>
         <span class="f-logo">kuum-oss / sol</span>
@@ -1046,24 +1233,25 @@
 
     /* ═══ OBSERVABILITY TERMINAL ═══ */
     const obsLines = [
-        { t:'<span class="t-prompt">$</span> <span class="t-cmd">docker compose</span> <span class="t-path">up -d</span>',            d:300 },
-        { t:'<span class="t-dim">  [+] Running 7/7</span>',                                                                           d:200 },
-        { t:'<span class="t-ok">  ✓</span> Container <span class="t-path">postgres</span>    Started   5432',                         d:120 },
-        { t:'<span class="t-ok">  ✓</span> Container <span class="t-path">redis</span>        Started   6379',                         d:120 },
-        { t:'<span class="t-ok">  ✓</span> Container <span class="t-path">toxiproxy</span>    Started   8474',                         d:120 },
-        { t:'<span class="t-ok">  ✓</span> Container <span class="t-path">influxdb</span>     Started   8086',                         d:120 },
-        { t:'<span class="t-ok">  ✓</span> Container <span class="t-path">prometheus</span>   Started   9090',                         d:120 },
-        { t:'<span class="t-ok">  ✓</span> Container <span class="t-path">grafana</span>      Started   3000',                         d:120 },
-        { t:'<span class="t-ok">  ✓</span> Container <span class="t-path">sol-app</span>      Started   8080',                         d:200 },
+        { t:'<span class="t-prompt">$</span> <span class="t-cmd">cd</span> <span class="t-path">performance-tests/infra</span>',          d:250 },
+        { t:'<span class="t-prompt">$</span> <span class="t-cmd">docker compose</span> <span class="t-path">up -d</span>',               d:300 },
+        { t:'<span class="t-dim">  [+] Running 7/7</span>',                                                                              d:200 },
+        { t:'<span class="t-ok">  ✓</span> Container <span class="t-path">postgres</span>    Started   5432',                            d:120 },
+        { t:'<span class="t-ok">  ✓</span> Container <span class="t-path">redis</span>        Started   6379',                            d:120 },
+        { t:'<span class="t-ok">  ✓</span> Container <span class="t-path">toxiproxy</span>    Started   8474',                            d:120 },
+        { t:'<span class="t-ok">  ✓</span> Container <span class="t-path">influxdb</span>     Started   8086',                            d:120 },
+        { t:'<span class="t-ok">  ✓</span> Container <span class="t-path">prometheus</span>   Started   9090',                            d:120 },
+        { t:'<span class="t-ok">  ✓</span> Container <span class="t-path">grafana</span>      Started   3000',                            d:120 },
+        { t:'<span class="t-ok">  ✓</span> Container <span class="t-path">sol-app</span>      Started   8080',                            d:200 },
         { t:'', d:100 },
-        { t:'<span class="t-prompt">$</span> <span class="t-cmd">curl</span> localhost:8080/actuator/prometheus | head -3',            d:350 },
-        { t:'<span class="t-out">  # HELP jvm_memory_used_bytes Used bytes of a given JVM memory area.</span>',                       d:180 },
-        { t:'<span class="t-out">  # TYPE jvm_memory_used_bytes gauge</span>',                                                         d:150 },
-        { t:'<span class="t-out">  jvm_memory_used_bytes{area="heap",...} 4.17e+07</span>',                                           d:150 },
+        { t:'<span class="t-prompt">$</span> <span class="t-cmd">curl</span> localhost:8080/actuator/prometheus | head -3',               d:350 },
+        { t:'<span class="t-out">  # HELP jvm_memory_used_bytes Used bytes of a given JVM memory area.</span>',                          d:180 },
+        { t:'<span class="t-out">  # TYPE jvm_memory_used_bytes gauge</span>',                                                            d:150 },
+        { t:'<span class="t-out">  jvm_memory_used_bytes{area="heap",...} 4.17e+07</span>',                                              d:150 },
         { t:'', d:100 },
         { t:'<span class="t-prompt">$</span> <span class="t-cmd">echo</span> <span class="t-path">"Grafana → :3000 | Prometheus → :9090"</span>', d:250 },
-        { t:'<span class="t-ok">  → stack is live. run your profile.</span>',                                                         d:100 },
-        { t:'<span class="t-prompt">$</span> <span class="t-cursor"></span>',                                                           d:0   },
+        { t:'<span class="t-ok">  → stack is live. run your profile.</span>',                                                            d:100 },
+        { t:'<span class="t-prompt">$</span> <span class="t-cursor"></span>',                                                              d:0 },
     ];
     const termBody = document.getElementById('obs-terminal');
     let termStarted = false;
