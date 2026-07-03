@@ -24,7 +24,7 @@
         #cd{position:fixed;width:5px;height:5px;background:var(--neon);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%)}
         body:has(a:hover) #cr,body:has(button:hover) #cr,body:has(.img-card:hover) #cr{width:52px;height:52px;border-color:var(--neon2)}
         @media(hover:none),(pointer:coarse){body{cursor:auto}#cr,#cd{display:none}}
-
+        /* GRID + SCAN */
         /* GRID + SCAN */
         body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,140,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,140,.025) 1px,transparent 1px);background-size:64px 64px;z-index:0;pointer-events:none}
         body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.07) 2px,rgba(0,0,0,.07) 4px);pointer-events:none;z-index:1;animation:scanMove 14s linear infinite}
