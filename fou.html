@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>fou // kuum-oss · notification microservice</title>
+  <meta name="description" content="fou — e-commerce notification microservice. RabbitMQ, PostgreSQL, AWS S3, JWT auth, Testcontainers. kuum-oss.">
+  <meta property="og:title" content="fou // notification microservice · kuum-oss">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#070c12">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23070c12'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='18' fill='%2300ff8c' text-anchor='middle'%3E%3E_%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink:    #070c12;
+      --ink2:   #0d1520;
+      --panel:  #111b28;
+      --edge:   rgba(0,255,140,0.12);
+      --edge2:  rgba(0,255,140,0.25);
+      --neon:   #00ff8c;
+      --neon2:  #00e5ff;
+      --dim:    #3d5166;
+      --muted:  #6b7f95;
+      --text:   #c8d8e8;
+      --white:  #e8f4ff;
+      --red:    #ff4d6d;
+      --amber:  #ffb703;
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--ink);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    #cursor-ring {
+      position: fixed; width:32px; height:32px;
+      border: 1.5px solid var(--neon); border-radius:50%;
+      pointer-events:none; z-index:9999;
+      transform: translate(-50%,-50%);
+      transition: width .2s, height .2s, border-color .2s, background .15s;
+      mix-blend-mode: difference;
+    }
+    #cursor-dot {
+      position:fixed; width:5px; height:5px;
+      background: var(--neon); border-radius:50%;
+      pointer-events:none; z-index:9999;
+      transform: translate(-50%,-50%);
+    }
+    body:has(a:hover) #cursor-ring,
+    body:has(button:hover) #cursor-ring,
+    body:has(.card:hover) #cursor-ring {
+      width:56px; height:56px;
+      border-color:var(--neon2);
+      background: rgba(0,229,255,0.05);
+    }
+    @media (hover:none),(pointer:coarse) {
+      body { cursor:auto; }
+      #cursor-ring,#cursor-dot { display:none; }
+    }
+    a:focus-visible, button:focus-visible {
+      outline: 1.5px solid var(--neon); outline-offset:3px;
+    }
+
+    body::before {
+      content:''; position:fixed; inset:0;
+      background-image:
+              linear-gradient(rgba(0,255,140,0.025) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(0,255,140,0.025) 1px, transparent 1px);
+      background-size: 64px 64px;
+      z-index:0; pointer-events:none;
+    }
+    body::after {
+      content:''; position:fixed; inset:0;
+      background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px);
+      pointer-events:none; z-index:1;
+      animation: scanMove 12s linear infinite;
+    }
+    @keyframes scanMove { 0%{background-position:0 0} 100%{background-position:0 200px} }
+
+    #bg-canvas { position:fixed; inset:0; z-index:0; pointer-events:none; }
+
+    .page {
+      position:relative; z-index:2;
+      max-width:980px; margin:0 auto;
+      padding: 0 28px 100px;
+    }
+
+    nav {
+      position:fixed; top:0; left:0; right:0; z-index:100;
+      padding:18px 40px;
+      display:flex; align-items:center; justify-content:space-between;
+      background: linear-gradient(to bottom, rgba(7,12,18,0.95), transparent);
+      backdrop-filter: blur(4px);
+    }
+    .nav-logo {
+      font-family:'Space Mono',monospace; font-size:13px;
+      color:var(--neon); letter-spacing:2px; text-decoration:none;
+    }
+    .nav-logo .sep { color:var(--dim); }
+    .nav-logo .proj { color:var(--white); }
+    .nav-links { display:flex; gap:32px; list-style:none; }
+    .nav-links a {
+      font-family:'Space Mono',monospace; font-size:11px;
+      color:var(--muted); text-decoration:none;
+      letter-spacing:2px; text-transform:uppercase; transition:color .25s;
+      position:relative;
+    }
+    .nav-links a::after {
+      content:''; position:absolute; left:0; bottom:-3px;
+      width:0; height:1px; background:var(--neon); transition:width .3s;
+    }
+    .nav-links a:hover { color:var(--neon); }
+    .nav-links a:hover::after { width:100%; }
+    .nav-links a.back { color:var(--dim); font-size:10px; }
+    .nav-links a.back:hover { color:var(--muted); }
+
+    @keyframes rise { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    @keyframes pulse-glow { 0%,100%{box-shadow:0 0 0 0 rgba(0,255,140,.5)} 50%{box-shadow:0 0 0 8px rgba(0,255,140,0)} }
+
+    .dot-pulse {
+      width:6px; height:6px; border-radius:50%;
+      background:var(--neon); animation:pulse-glow 2s infinite; flex-shrink:0;
+    }
+
+    .hero {
+      min-height:100vh; display:flex; flex-direction:column;
+      justify-content:center; padding-top:100px; position:relative;
+    }
+    .hero-eyebrow {
+      font-family:'Space Mono',monospace; font-size:10px;
+      letter-spacing:4px; color:var(--neon); text-transform:uppercase;
+      margin-bottom:28px; display:flex; align-items:center; gap:12px;
+      opacity:0; animation:rise .7s .1s forwards;
+    }
+    .hero-name {
+      font-size: clamp(54px,9vw,108px); font-weight:800;
+      line-height:.9; letter-spacing:-2px; margin-bottom:12px;
+      opacity:0; animation:rise .7s .25s forwards;
+    }
+    .hero-name .dim-part  { color:var(--dim); }
+    .hero-name .bright-part { color:var(--white); }
+    .hero-name .accent    { color:var(--neon); }
+    .hero-tag-line {
+      font-family:'Space Mono',monospace;
+      font-size: clamp(11px,1.3vw,14px);
+      color:var(--muted); margin-bottom:40px;
+      opacity:0; animation:rise .7s .4s forwards;
+    }
+    .hero-body {
+      max-width:520px; font-size:15px; line-height:1.85;
+      color:var(--muted); margin-bottom:20px;
+      opacity:0; animation:rise .7s .55s forwards;
+    }
+    .hero-quote {
+      border-left:2px solid var(--neon); padding:10px 18px;
+      font-family:'Space Mono',monospace; font-size:11px;
+      color:var(--neon); opacity:0; margin-bottom:44px;
+      max-width:480px; line-height:1.7;
+      animation:rise .7s .65s forwards;
+    }
+    .hero-actions {
+      display:flex; gap:14px; flex-wrap:wrap;
+      opacity:0; animation:rise .7s .75s forwards;
+    }
+    .btn {
+      font-family:'Space Mono',monospace; font-size:11px;
+      letter-spacing:1.5px; text-transform:uppercase;
+      padding:12px 26px; border:1px solid var(--edge2);
+      background:transparent; color:var(--neon);
+      cursor:none; text-decoration:none; border-radius:3px;
+      transition:all .3s; position:relative; overflow:hidden;
+    }
+    .btn::before {
+      content:''; position:absolute; inset:0;
+      background:var(--neon); transform:translateX(-101%);
+      transition:transform .3s; z-index:-1;
+    }
+    .btn:hover { color:var(--ink); border-color:var(--neon); }
+    .btn:hover::before { transform:translateX(0); }
+    .btn-ghost { color:var(--muted); border-color:var(--edge); }
+    .btn-ghost:hover { color:var(--white); border-color:var(--muted); }
+    .btn-ghost::before { background:rgba(255,255,255,.04); transform:none; opacity:0; transition:opacity .3s; }
+    .btn-ghost:hover::before { opacity:1; }
+
+    .section {
+      margin-bottom:100px;
+      opacity:0; transform:translateY(40px);
+      transition:opacity .8s, transform .8s;
+    }
+    .section.in-view { opacity:1; transform:translateY(0); }
+    .section-header {
+      display:flex; align-items:center; gap:20px; margin-bottom:40px;
+    }
+    .section-num {
+      font-family:'Space Mono',monospace; font-size:10px;
+      color:var(--neon); opacity:.5;
+    }
+    .section-title {
+      font-family:'Space Mono',monospace; font-size:10px;
+      letter-spacing:4px; color:var(--neon); text-transform:uppercase;
+    }
+    .section-rule { flex:1; height:1px; background:var(--edge); }
+
+    .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:2px; margin-bottom:2px; }
+    .metric {
+      background:var(--panel); padding:28px 24px;
+      position:relative; overflow:hidden;
+    }
+    .metric::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:2px;
+      background:linear-gradient(to right,var(--neon),transparent);
+      opacity:0; transition:opacity .4s;
+    }
+    .metric:hover::before { opacity:1; }
+    .metric-val {
+      font-family:'Space Mono',monospace; font-size:36px; font-weight:700;
+      color:var(--white); line-height:1; letter-spacing:-1px;
+    }
+    .metric-val .unit { font-size:14px; color:var(--neon); margin-left:2px; }
+    .metric-label {
+      font-family:'Space Mono',monospace; font-size:9px;
+      letter-spacing:3px; color:var(--dim); text-transform:uppercase; margin-top:8px;
+    }
+
+    .tier-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; }
+    .tier-card {
+      background:var(--panel); padding:28px 24px;
+      position:relative; overflow:hidden; transition:background .3s;
+    }
+    .tier-card::after {
+      content:''; position:absolute; bottom:0; left:0;
+      width:100%; height:2px; background:var(--neon);
+      transform:scaleX(0); transform-origin:left;
+      transition:transform .4s cubic-bezier(.4,0,.2,1);
+    }
+    .tier-card:hover { background:rgba(17,27,40,.85); }
+    .tier-card:hover::after { transform:scaleX(1); }
+    .tier-num {
+      font-family:'Space Mono',monospace; font-size:9px;
+      letter-spacing:3px; color:var(--neon); opacity:.5;
+      text-transform:uppercase; margin-bottom:10px;
+    }
+    .tier-name {
+      font-size:18px; font-weight:700; color:var(--white);
+      margin-bottom:4px; line-height:1.2;
+    }
+    .tier-tech {
+      font-family:'Space Mono',monospace; font-size:10px;
+      color:var(--neon2); margin-bottom:20px; letter-spacing:1px;
+    }
+    .tier-list { list-style:none; font-size:12px; color:var(--muted); line-height:2; }
+    .tier-list li::before {
+      content:'→  '; font-family:'Space Mono',monospace;
+      font-size:10px; color:var(--neon);
+    }
+    .tier-glyph {
+      position:absolute; bottom:-14px; right:-6px;
+      font-family:'Space Mono',monospace; font-size:88px; font-weight:700;
+      color:var(--text); opacity:.03; line-height:1;
+      pointer-events:none; transition:opacity .4s;
+    }
+    .tier-card:hover .tier-glyph { opacity:.06; }
+
+    .stack-group + .stack-group { margin-top:28px; }
+    .stack-group-label {
+      font-family:'Space Mono',monospace; font-size:9px;
+      letter-spacing:3px; color:var(--dim); text-transform:uppercase; margin-bottom:14px;
+    }
+    .stack-pills { display:flex; flex-wrap:wrap; gap:8px; }
+    .pill {
+      font-family:'Space Mono',monospace; font-size:11px;
+      padding:8px 16px; border:1px solid var(--edge);
+      color:var(--muted); border-radius:2px; background:var(--panel);
+      transition:all .3s; cursor:default; position:relative; overflow:hidden;
+    }
+    .pill::before {
+      content:''; position:absolute; inset:0;
+      background:var(--neon); transform:scale(0); border-radius:50%;
+      transition:transform .4s,opacity .4s; opacity:.07; transform-origin:center;
+    }
+    .pill:hover { color:var(--neon); border-color:var(--edge2); transform:translateY(-2px); }
+    .pill:hover::before { transform:scale(3); }
+    .pill.primary { border-color:rgba(0,255,140,.3); color:var(--neon); background:rgba(0,255,140,.04); }
+
+    .terminal-wrap {
+      background:var(--ink2); border:1px solid var(--edge);
+      border-radius:4px; overflow:hidden; font-family:'Space Mono',monospace;
+    }
+    .terminal-bar {
+      background:var(--panel); padding:12px 18px;
+      border-bottom:1px solid var(--edge);
+      display:flex; align-items:center; gap:10px;
+    }
+    .tbar-dot { width:10px; height:10px; border-radius:50%; }
+    .tbar-title { font-size:10px; letter-spacing:2px; color:var(--dim); margin-left:8px; }
+    .tbar-badge {
+      margin-left:auto; font-family:'Space Mono',monospace;
+      font-size:8px; letter-spacing:1px; padding:2px 8px;
+      border:1px solid rgba(0,255,140,.2); color:var(--neon);
+      border-radius:2px;
+    }
+    .terminal-body { padding:24px 24px 28px; font-size:12px; line-height:2; }
+    .t-prompt { color:var(--neon); }
+    .t-cmd    { color:var(--neon2); }
+    .t-path   { color:#a78bfa; }
+    .t-out    { color:var(--text); }
+    .t-ok     { color:var(--neon); }
+    .t-fail   { color:var(--red); }
+    .t-dim    { color:var(--dim); }
+    .t-cursor {
+      display:inline-block; width:8px; height:14px;
+      background:var(--neon); vertical-align:middle;
+      margin-left:2px; animation:blink 1s infinite;
+    }
+
+    /* flow diagram */
+    .flow-wrap {
+      background:var(--panel); border:1px solid var(--edge);
+      padding:40px 32px; font-family:'Space Mono',monospace;
+      font-size:11px; color:var(--muted); line-height:2.2;
+      overflow-x:auto;
+    }
+    .flow-wrap .f-accent { color:var(--neon); }
+    .flow-wrap .f-blue   { color:var(--neon2); }
+    .flow-wrap .f-purple { color:#a78bfa; }
+    .flow-wrap .f-dim    { color:var(--dim); }
+
+    /* result table */
+    .result-table { width:100%; border-collapse:collapse; }
+    .result-table thead th {
+      font-family:'Space Mono',monospace; font-size:8px;
+      letter-spacing:2px; text-transform:uppercase;
+      color:var(--dim); padding:8px 12px; text-align:left;
+      border-bottom:1px solid var(--edge);
+    }
+    .result-table tbody tr {
+      border-bottom:1px solid rgba(0,255,140,.04);
+      transition:background .2s;
+    }
+    .result-table tbody tr:hover { background:rgba(0,255,140,.02); }
+    .result-table tbody td {
+      font-family:'Space Mono',monospace; font-size:11px;
+      padding:10px 12px; color:var(--text);
+    }
+    .result-table .t-name { color:var(--muted); }
+    .result-table .t-val  { color:var(--white); font-weight:700; }
+    .t-up   { color:#00ff8c; }
+    .t-down { color:#ffb703; }
+
+    footer {
+      border-top:1px solid var(--edge); padding-top:40px;
+      display:flex; align-items:center; justify-content:space-between;
+      font-family:'Space Mono',monospace; font-size:10px;
+      color:var(--dim); flex-wrap:wrap; gap:12px;
+    }
+    .f-logo { color:var(--neon); letter-spacing:2px; }
+    .f-links { display:flex; gap:24px; }
+    .f-links a {
+      color:var(--dim); text-decoration:none; letter-spacing:1px;
+      transition:color .2s;
+    }
+    .f-links a:hover { color:var(--neon); }
+
+    @media(max-width:700px) {
+      .tier-grid  { grid-template-columns:1fr; }
+      .metrics    { grid-template-columns:1fr 1fr; }
+      nav { padding:14px 20px; }
+      .nav-links  { gap:18px; }
+    }
+
+    .proof-card { background:var(--panel); border:1px solid var(--edge); overflow:hidden; }
+    .proof-label { padding:14px 20px; font-family:"Space Mono",monospace; font-size:11px; color:var(--muted); display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--edge); }
+    .proof-badge { background:rgba(0,255,140,.08); border:1px solid var(--edge2); color:var(--neon); font-size:9px; letter-spacing:2px; text-transform:uppercase; padding:3px 10px; border-radius:2px; flex-shrink:0; }
+    .proof-img-wrap { overflow:hidden; max-height:300px; display:flex; align-items:flex-start; cursor:zoom-in; }
+    .proof-img-wrap img { width:100%; display:block; object-fit:cover; object-position:top; filter:brightness(.92) contrast(1.05); transition:filter .3s,transform .4s; }
+    .proof-card:hover .proof-img-wrap img { filter:brightness(1) contrast(1); transform:scale(1.015); }
+    /* lightbox */
+    #lb { display:none; position:fixed; inset:0; z-index:9998; background:rgba(0,0,0,.92); align-items:center; justify-content:center; padding:24px; cursor:zoom-out; }
+    #lb.open { display:flex; }
+    #lb img { max-width:100%; max-height:92vh; object-fit:contain; border:1px solid var(--edge2); box-shadow:0 0 60px rgba(0,255,140,.1); }
+    #lb-close { position:fixed; top:20px; right:28px; font-family:"Space Mono",monospace; font-size:11px; color:var(--neon); letter-spacing:2px; cursor:pointer; opacity:.7; transition:opacity .2s; }
+    #lb-close:hover { opacity:1; }
+  </style>
+</head>
+<body>
+
+<div id="cursor-ring"></div>
+<div id="cursor-dot"></div>
+<canvas id="bg-canvas"></canvas>
+
+<nav>
+  <a class="nav-logo" href="https://kuum-oss.github.io/kuum-oss_web/">
+    kuum-oss <span class="sep">//</span> <span class="proj">fou</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#architecture">arch</a></li>
+    <li><a href="#flow">flow</a></li>
+    <li><a href="#decisions">decisions</a></li>
+    <li><a href="#quickstart">start</a></li>
+    <li><a href="https://github.com/kuum-oss/fou" target="_blank" rel="noopener">→ github</a></li>
+    <li><a class="back" href="https://kuum-oss.github.io/kuum-oss_web/">← back</a></li>
+  </ul>
+</nav>
+
+<div class="page">
+
+  <!-- ── HERO ──────────────────────────────── -->
+  <div class="hero">
+    <div class="hero-eyebrow">
+      <div class="dot-pulse"></div>
+      microservices · event-driven · kuum-oss
+    </div>
+    <div class="hero-name">
+      <span class="dim-part">kuum/</span><span class="bright-part">fou</span><span class="accent">.</span>
+    </div>
+    <div class="hero-tag-line">
+      // e-commerce notification microservice
+    </div>
+    <p class="hero-body">
+      Event-driven notification service for an e-commerce platform.<br>
+      Order events flow through RabbitMQ into a durable consumer pipeline —
+      persisted to PostgreSQL, reported to S3, with graceful degradation
+      when upstream services fail. JWT-secured REST API, Testcontainers
+      integration tests, LocalStack S3 in Docker.
+    </p>
+    <div class="hero-quote">
+      "Don't let S3 take down your order flow — degrade gracefully, retry asynchronously."
+    </div>
+    <div class="hero-actions">
+      <a class="btn" href="https://github.com/kuum-oss/fou" target="_blank" rel="noopener">→ view source</a>
+      <a class="btn btn-ghost" href="#flow">see event flow</a>
+      <a class="btn btn-ghost" href="#decisions">design decisions</a>
+    </div>
+  </div>
+
+  <!-- ── METRICS ────────────────────────────── -->
+  <div id="metrics" class="section">
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-val"><span id="m1">0</span><span class="unit">svc</span></div>
+        <div class="metric-label">docker services</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val"><span id="m2">0</span><span class="unit">×</span></div>
+        <div class="metric-label">integration tests</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val"><span id="m3">0</span><span class="unit">min</span></div>
+        <div class="metric-label">S3 presigned URL TTL</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val" style="color:var(--neon)">0</div>
+        <div class="metric-label">lost messages on restart</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ARCHITECTURE ───────────────────────── -->
+  <div class="section" id="architecture">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <span class="section-title">system architecture</span>
+      <div class="section-rule"></div>
+    </div>
+    <div class="tier-grid">
+      <div class="tier-card">
+        <div class="tier-num">LAYER I · REST</div>
+        <div class="tier-name">Order Producer</div>
+        <div class="tier-tech">Spring MVC · JWT Auth</div>
+        <ul class="tier-list">
+          <li>POST /orders → publishes to RabbitMQ</li>
+          <li>GET /orders/user/{id} → N+1-safe query</li>
+          <li>GET /orders/{id}/report → presigned URL</li>
+          <li>JWT filter on all non-auth routes</li>
+          <li>RFC 7807 Problem Details on errors</li>
+          <li>@PreAuthorize ownership check</li>
+        </ul>
+        <div class="tier-glyph">I</div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-num">LAYER II · MESSAGING</div>
+        <div class="tier-name">RabbitMQ Pipeline</div>
+        <div class="tier-tech">Spring AMQP · Durable Queue · DLQ</div>
+        <ul class="tier-list">
+          <li>Durable exchange + queue</li>
+          <li>Dead-letter queue for failed messages</li>
+          <li>JSON serialization via Jackson</li>
+          <li>Exponential backoff on producer</li>
+          <li>Idempotency check in consumer</li>
+          <li>Auto-ack with DLQ on rejection</li>
+        </ul>
+        <div class="tier-glyph">II</div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-num">LAYER III · STORAGE</div>
+        <div class="tier-name">Persistence + S3</div>
+        <div class="tier-tech">JPA · Hibernate · LocalStack</div>
+        <ul class="tier-list">
+          <li>Order + Notification saved in one tx</li>
+          <li>S3 upload outside transaction</li>
+          <li>PENDING_UPLOAD fallback on S3 fail</li>
+          <li>@Scheduled retry every 5 min</li>
+          <li>Flyway schema versioning</li>
+          <li>JOIN FETCH solves N+1</li>
+        </ul>
+        <div class="tier-glyph">III</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── EVENT FLOW ─────────────────────────── -->
+  <div class="section" id="flow">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <span class="section-title">event flow</span>
+      <div class="section-rule"></div>
+    </div>
+    <div class="flow-wrap">
+<pre>
+<span class="f-accent">POST /orders</span>
+     │
+     ▼
+<span class="f-blue">OrderController</span> ──► <span class="f-blue">OrderProducer</span> ──► <span class="f-accent">RabbitMQ</span> (orders.queue, durable)
+                                              │
+                                              ▼
+                                       <span class="f-blue">OrderConsumer</span>
+                                              │
+                         <span class="f-dim">┌─────────────────────┼──────────────────────┐</span>
+                         ▼                   ▼                     ▼
+               <span class="f-purple">OrderRepository</span>   <span class="f-purple">NotificationRepository</span>   <span class="f-blue">S3ReportService</span>
+                         │                   │                     │
+                         ▼                   ▼              <span class="f-dim">┌──────┴──────┐</span>
+                   <span class="f-dim">PostgreSQL</span>        <span class="f-dim">PostgreSQL</span>             │   success   │   failure
+                                                            │             │
+                                                            ▼             ▼
+                                                        <span class="f-accent">SENT</span>    <span class="f-down">PENDING_UPLOAD</span>
+                                                                       │
+                                              <span class="f-dim">@Scheduled every 5 min ──►</span> <span class="f-blue">S3RetryScheduler</span>
+</pre>
+    </div>
+  </div>
+
+  <!-- ── KEY DESIGN DECISIONS ──────────────── -->
+  <div class="section" id="decisions">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <span class="section-title">design decisions</span>
+      <div class="section-rule"></div>
+    </div>
+
+    <div class="terminal-wrap" style="margin-bottom:2px;">
+      <div class="terminal-bar">
+        <div class="tbar-dot" style="background:#ff5f57"></div>
+        <div class="tbar-dot" style="background:#febc2e"></div>
+        <div class="tbar-dot" style="background:#28c840"></div>
+        <span class="tbar-title">architecture decisions · rationale</span>
+      </div>
+      <div class="terminal-body" style="padding:0">
+        <table class="result-table">
+          <thead>
+          <tr>
+            <th>topic</th>
+            <th>decision</th>
+            <th>why</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td class="t-name">Hibernate N+1</td>
+            <td class="t-val">JOIN FETCH in JPQL</td>
+            <td class="t-out">Single SQL loads orders + notifications instead of 1+N queries</td>
+          </tr>
+          <tr>
+            <td class="t-name">S3 fallback</td>
+            <td class="t-val">PENDING_UPLOAD status</td>
+            <td class="t-out">DB commit before S3 — upload failure never loses the order</td>
+          </tr>
+          <tr>
+            <td class="t-name">Idempotency</td>
+            <td class="t-val">existsById() check</td>
+            <td class="t-out">Duplicate RabbitMQ delivery silently skipped, no duplicate orders</td>
+          </tr>
+          <tr>
+            <td class="t-name">Transaction split</td>
+            <td class="t-val">TransactionTemplate</td>
+            <td class="t-out">S3 call outside TX — connection not held open during slow upload</td>
+          </tr>
+          <tr>
+            <td class="t-name">DLQ</td>
+            <td class="t-val">orders.dlq</td>
+            <td class="t-out">Poison messages don't loop forever — inspectable, replayable</td>
+          </tr>
+          <tr>
+            <td class="t-name">Retry scheduler</td>
+            <td class="t-val">@Scheduled fixed delay</td>
+            <td class="t-out">S3 recovers → all PENDING_UPLOAD notifications auto-healed</td>
+          </tr>
+          <tr>
+            <td class="t-name">Auth</td>
+            <td class="t-val">JWT + Spring Security</td>
+            <td class="t-out">Stateless, ownership-checked — users only see their own orders</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TECH STACK ─────────────────────────── -->
+  <div class="section" id="stack">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <span class="section-title">tech stack</span>
+      <div class="section-rule"></div>
+    </div>
+    <div class="stack-group">
+      <div class="stack-group-label">core</div>
+      <div class="stack-pills">
+        <span class="pill primary">Java 21</span>
+        <span class="pill primary">Spring Boot 3</span>
+        <span class="pill primary">RabbitMQ</span>
+        <span class="pill primary">PostgreSQL</span>
+        <span class="pill">Spring Data JPA</span>
+        <span class="pill">Hibernate</span>
+        <span class="pill">Flyway</span>
+      </div>
+    </div>
+    <div class="stack-group">
+      <div class="stack-group-label">storage & messaging</div>
+      <div class="stack-pills">
+        <span class="pill">AWS SDK v2</span>
+        <span class="pill">LocalStack S3</span>
+        <span class="pill">Spring AMQP</span>
+        <span class="pill">Jackson</span>
+        <span class="pill">Spring Security</span>
+        <span class="pill">JWT (jjwt)</span>
+      </div>
+    </div>
+    <div class="stack-group">
+      <div class="stack-group-label">testing & infra</div>
+      <div class="stack-pills">
+        <span class="pill">Testcontainers</span>
+        <span class="pill">LocalStack TC</span>
+        <span class="pill">Awaitility</span>
+        <span class="pill">Docker Compose</span>
+        <span class="pill">Prometheus</span>
+        <span class="pill">Grafana</span>
+        <span class="pill">Spring Actuator</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── QUICK START ───────────────────────── -->
+  <div class="section" id="quickstart">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <span class="section-title">quick start</span>
+      <div class="section-rule"></div>
+    </div>
+    <div class="tier-grid" style="margin-bottom:2px;">
+      <div class="tier-card">
+        <div class="tier-num">STEP 1 · SETUP</div>
+        <div class="tier-name">Start Stack</div>
+        <div class="tier-tech">Docker · Java 21 · Maven</div>
+        <ul class="tier-list">
+          <li>git clone kuum-oss/fou</li>
+          <li>docker compose up --build -d</li>
+          <li>PostgreSQL → :5432</li>
+          <li>RabbitMQ UI → :15672 (guest/guest)</li>
+          <li>LocalStack S3 → :4566</li>
+          <li>App → :8080</li>
+        </ul>
+        <div class="tier-glyph">1</div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-num">STEP 2 · AUTH</div>
+        <div class="tier-name">Get Token</div>
+        <div class="tier-tech">JWT · POST /auth/token</div>
+        <ul class="tier-list">
+          <li>POST /auth/token {"userId":"user-123"}</li>
+          <li>returns {"token":"eyJ..."}</li>
+          <li>use as Bearer in all requests</li>
+          <li>token tied to userId</li>
+          <li>ownership enforced on GET /orders</li>
+        </ul>
+        <div class="tier-glyph">2</div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-num">STEP 3 · USE</div>
+        <div class="tier-name">Create Order</div>
+        <div class="tier-tech">REST → RabbitMQ → S3</div>
+        <ul class="tier-list">
+          <li>POST /orders → 202 + orderId</li>
+          <li>consumer processes async</li>
+          <li>GET /orders/user/{id} → orders + notifications</li>
+          <li>GET /orders/{id}/report → presigned URL</li>
+          <li>URL valid 15 minutes</li>
+        </ul>
+        <div class="tier-glyph">3</div>
+      </div>
+    </div>
+
+    <div class="terminal-wrap">
+      <div class="terminal-bar">
+        <div class="tbar-dot" style="background:#ff5f57"></div>
+        <div class="tbar-dot" style="background:#febc2e"></div>
+        <div class="tbar-dot" style="background:#28c840"></div>
+        <span class="tbar-title">terminal · full flow</span>
+      </div>
+      <div class="terminal-body" id="flow-terminal">
+        <div><span class="t-prompt">$</span> <span class="t-cmd">git clone</span> <span class="t-path">https://github.com/kuum-oss/fou</span> && cd fou</div>
+        <div><span class="t-prompt">$</span> <span class="t-cmd">docker compose</span> <span class="t-path">up --build -d</span></div>
+        <div><span class="t-dim">  [+] Running 4/4 — postgres · rabbitmq · localstack · notifyhub</span></div>
+        <div>&nbsp;</div>
+        <div><span class="t-dim">  # get JWT token</span></div>
+        <div><span class="t-prompt">$</span> <span class="t-cmd">curl</span> -X POST localhost:8080/auth/token \</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;-H "Content-Type: application/json" \</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;-d '{"userId":"user-123"}'</div>
+        <div><span class="t-ok">  {"token":"eyJhbGciOiJIUzI1NiJ9..."}</span></div>
+        <div>&nbsp;</div>
+        <div><span class="t-dim">  # create order → published to RabbitMQ</span></div>
+        <div><span class="t-prompt">$</span> <span class="t-cmd">curl</span> -X POST localhost:8080/orders \</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;-H "Authorization: Bearer eyJ..." \</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;-d '{"userId":"user-123","amount":99.99}'</div>
+        <div><span class="t-ok">  {"orderId":"550e8400...","message":"Order accepted and queued"}</span></div>
+        <div>&nbsp;</div>
+        <div><span class="t-dim">  # get S3 presigned report URL</span></div>
+        <div><span class="t-prompt">$</span> <span class="t-cmd">curl</span> localhost:8080/orders/550e8400.../report \</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;-H "Authorization: Bearer eyJ..."</div>
+        <div><span class="t-ok">  {"presignedUrl":"http://localhost:4566/notifyhub-reports/order_550e8400..._report.txt?..."}</span></div>
+        <div><span class="t-prompt">$</span> <span class="t-cursor"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TESTS ─────────────────────────────── -->
+  <div class="section" id="tests">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <span class="section-title">integration tests</span>
+      <div class="section-rule"></div>
+    </div>
+
+    <div class="terminal-wrap" style="margin-bottom:2px;">
+      <div class="terminal-bar">
+        <div class="tbar-dot" style="background:#ff5f57"></div>
+        <div class="tbar-dot" style="background:#febc2e"></div>
+        <div class="tbar-dot" style="background:#28c840"></div>
+        <span class="tbar-title">Testcontainers · real infra · no mocks</span>
+        <span class="tbar-badge">✓ ALL PASS</span>
+      </div>
+      <div class="terminal-body" style="padding:0">
+        <table class="result-table">
+          <thead>
+          <tr>
+            <th>test</th>
+            <th>containers</th>
+            <th>what it verifies</th>
+            <th>result</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td class="t-name">whenOrderCreated_thenOrderAndNotificationSavedInDb</td>
+            <td class="t-val">Postgres · RabbitMQ</td>
+            <td class="t-out">REST → queue → consumer → DB · full async flow with Awaitility</td>
+            <td class="t-up">✓ PASS</td>
+          </tr>
+          <tr>
+            <td class="t-name">whenMessagePublishedDirectly_thenConsumedAndPersistedToPostgres</td>
+            <td class="t-val">Postgres · RabbitMQ</td>
+            <td class="t-out">Producer → durable queue → consumer saves Order + Notification</td>
+            <td class="t-up">✓ PASS</td>
+          </tr>
+          <tr>
+            <td class="t-name">whenReportUploaded_thenFileExistsInS3AndPresignedUrlIsReturned</td>
+            <td class="t-val">Postgres · RabbitMQ · LocalStack</td>
+            <td class="t-out">S3 upload via LocalStack · HeadObject confirms file · presigned URL generated</td>
+            <td class="t-up">✓ PASS</td>
+          </tr>
+          <tr>
+            <td class="t-name">whenFetchingOrdersForUser_thenNotificationsLoadedWithoutN1</td>
+            <td class="t-val">Postgres · RabbitMQ · LocalStack</td>
+            <td class="t-out">2 orders × 2 notifications — JOIN FETCH loads all without LazyInitializationException</td>
+            <td class="t-up">✓ PASS</td>
+          </tr>
+          <tr>
+            <td class="t-name">whenS3Unavailable_thenNotificationSavedWithPendingUploadStatus</td>
+            <td class="t-val">Postgres · RabbitMQ · LocalStack</td>
+            <td class="t-out">Bucket deleted → upload fails → notification persisted as PENDING_UPLOAD</td>
+            <td class="t-up">✓ PASS</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="metrics" style="grid-template-columns:repeat(3,1fr)">
+      <div class="metric">
+        <div class="metric-val" style="color:var(--neon)">5</div>
+        <div class="metric-label">integration tests</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val">3</div>
+        <div class="metric-label">real containers</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val" style="color:var(--neon)">0</div>
+        <div class="metric-label">infrastructure mocks</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- lightbox -->
+  <div id="lb" onclick="closeLb()">
+    <span id="lb-close">ESC / CLICK TO CLOSE ×</span>
+    <img id="lb-img" src="" alt="">
+  </div>
+
+  <!-- ── PROOF: IT RUNS ───────────────────── -->
+  <div class="section" id="proof">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <span class="section-title">proof · it runs</span>
+      <div class="section-rule"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:2px;">
+
+      <div class="proof-card">
+        <div class="proof-label">
+          <span class="proof-badge">startup</span>
+          Spring Boot up — Flyway, HikariCP, RabbitMQ, S3 in 4.3s
+        </div>
+        <div class="proof-img-wrap" onclick="openLb('screenshots/startup.png','Spring Boot startup log')">
+          <img src="screenshots/startup.png" alt="Spring Boot startup log" loading="lazy">
+        </div>
+      </div>
+
+      <div class="proof-card">
+        <div class="proof-label">
+          <span class="proof-badge">runtime</span>
+          Flyway validated · JOIN FETCH SQL · S3RetryScheduler idle
+        </div>
+        <div class="proof-img-wrap" onclick="openLb('screenshots/runtime.png','Flyway and scheduler log')">
+          <img src="screenshots/runtime.png" alt="Flyway and scheduler log" loading="lazy">
+        </div>
+      </div>
+
+      <div class="proof-card" style="grid-column:1/-1;">
+        <div class="proof-label">
+          <span class="proof-badge">api</span>
+          JWT → POST /orders → GET with notifications → RFC 7807 on bad UUID
+        </div>
+        <div class="proof-img-wrap" style="max-height:420px;" onclick="openLb('screenshots/api.png','curl API proof')">
+          <img src="screenshots/api.png" alt="curl API proof" loading="lazy">
+        </div>
+      </div>
+
+      <div class="proof-card" style="grid-column:1/-1;">
+        <div class="proof-label">
+          <span class="proof-badge">build</span>
+          ./mvnw clean package · 28 files · BUILD SUCCESS · 3.4s
+        </div>
+        <div class="proof-img-wrap" style="max-height:340px;" onclick="openLb('screenshots/build.png','Maven build success')">
+          <img src="screenshots/build.png" alt="Maven build success" loading="lazy">
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    <span class="f-logo">kuum-oss / fou</span>
+    <span style="display:flex;align-items:center;gap:8px">
+            <div class="dot-pulse" style="width:5px;height:5px"></div>
+            notification microservice · 2026
+        </span>
+    <div class="f-links">
+      <a href="https://github.com/kuum-oss/fou" target="_blank" rel="noopener">github</a>
+      <a href="https://kuum-oss.github.io/kuum-oss_web/">portfolio</a>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const ring = document.getElementById('cursor-ring');
+  const dot  = document.getElementById('cursor-dot');
+  let mx = -200, my = -200;
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    dot.style.left = mx + 'px';
+    dot.style.top  = my + 'px';
+  });
+  function moveCursor() {
+    ring.style.left = mx + 'px';
+    ring.style.top  = my + 'px';
+    requestAnimationFrame(moveCursor);
+  }
+  if (!reducedMotion) moveCursor();
+
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+  const N = window.innerWidth < 700 ? 30 : 80;
+
+  function initCanvas() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    particles = Array.from({length:N}, () => ({
+      x: Math.random()*W, y: Math.random()*H,
+      r: Math.random()*1.4+.3,
+      vx:(Math.random()-.5)*.18, vy:(Math.random()-.5)*.18,
+      o: Math.random()*.6+.1, to:Math.random()*.6+.1
+    }));
+  }
+  function drawCanvas() {
+    ctx.clearRect(0,0,W,H);
+    for (let i=0;i<particles.length;i++) {
+      for (let j=i+1;j<particles.length;j++) {
+        const dx=particles[i].x-particles[j].x, dy=particles[i].y-particles[j].y;
+        const d=Math.sqrt(dx*dx+dy*dy);
+        if (d<110) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x,particles[i].y);
+          ctx.lineTo(particles[j].x,particles[j].y);
+          ctx.strokeStyle=`rgba(0,255,140,${(1-d/110)*.1})`;
+          ctx.lineWidth=.5; ctx.stroke();
+        }
+      }
+    }
+    particles.forEach(p => {
+      p.o+=(p.to-p.o)*.02;
+      if (Math.random()<.005) p.to=Math.random()*.6+.1;
+      p.x+=p.vx; p.y+=p.vy;
+      if (p.x<0) p.x=W; if (p.x>W) p.x=0;
+      if (p.y<0) p.y=H; if (p.y>H) p.y=0;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(0,255,140,${p.o})`; ctx.fill();
+    });
+    requestAnimationFrame(drawCanvas);
+  }
+  initCanvas();
+  window.addEventListener('resize', initCanvas);
+  if (!reducedMotion) drawCanvas();
+
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) e.target.classList.add('in-view');
+    });
+  }, { threshold:.08 });
+  document.querySelectorAll('.section').forEach(s => obs.observe(s));
+
+  function countUp(id, target, dur) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const start = performance.now();
+    function tick(now) {
+      const t = Math.min((now-start)/dur, 1);
+      const ease = 1-Math.pow(1-t,3);
+      el.textContent = Math.round(ease*target);
+      if (t<1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+  const mObs = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) {
+      countUp('m1', 4, 900);
+      countUp('m2', 5, 1100);
+      countUp('m3', 15, 1200);
+      mObs.disconnect();
+    }
+  }, { threshold:.3 });
+  mObs.observe(document.getElementById('metrics'));
+
+  function openLb(src, alt) {
+    const lb = document.getElementById('lb');
+    const img = document.getElementById('lb-img');
+    img.src = src; img.alt = alt;
+    lb.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLb() {
+    document.getElementById('lb').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLb(); });
+</script>
+</body>
+</html>
