@@ -980,6 +980,78 @@
 
     <div class="projects-grid">
 
+      <!-- FOU — NotifyHub -->
+      <div class="card wide" style="cursor:default">
+        <div class="card-left">
+          <div class="card-type">microservices · event-driven · featured</div>
+          <div class="card-title">NotifyHub</div>
+          <div class="card-desc">
+            Event-driven notification microservice for an e-commerce platform.
+            Orders flow through RabbitMQ into a durable consumer pipeline — persisted to PostgreSQL,
+            reported to S3, with graceful degradation and async retry when S3 is unavailable.
+          </div>
+          <div class="card-tags">
+            <span class="tag">Java 21</span>
+            <span class="tag">Spring Boot 3</span>
+            <span class="tag">RabbitMQ</span>
+            <span class="tag">PostgreSQL</span>
+            <span class="tag">AWS S3</span>
+            <span class="tag">Testcontainers</span>
+            <span class="tag">JWT</span>
+          </div>
+          <div class="card-actions">
+            <a class="card-btn" href="fou.html">→ case study</a>
+            <a class="card-btn ghost" href="https://github.com/kuum-oss/fou" target="_blank" rel="noopener">↗ github</a>
+          </div>
+        </div>
+        <div class="card-right">
+          <ul class="card-feature-list">
+            <li>Durable queue + DLQ — zero message loss on restart</li>
+            <li>S3 fallback: PENDING_UPLOAD → @Scheduled retry</li>
+            <li>JOIN FETCH solves Hibernate N+1</li>
+            <li>Idempotent consumer — safe on duplicate delivery</li>
+            <li>5 Testcontainers tests — real Postgres, RabbitMQ, LocalStack</li>
+            <li>JWT auth + ownership check on all endpoints</li>
+          </ul>
+        </div>
+        <span class="card-glyph" aria-hidden="true">⇌</span>
+      </div>
+
+      <!-- SOL — wide featured card -->
+      <div class="card wide" style="cursor:default">
+        <div class="card-left">
+          <div class="card-type">performance engineering · featured</div>
+          <div class="card-title">sol</div>
+          <div class="card-desc">
+            Three-tier performance testing system for a JVM microservice stack — microbenchmarks, load testing, and chaos engineering wired into one pipeline with full observability.
+          </div>
+          <div class="card-tags">
+            <span class="tag">Kotlin</span>
+            <span class="tag">Java 21</span>
+            <span class="tag">JMH</span>
+            <span class="tag">Gatling</span>
+            <span class="tag">Toxiproxy</span>
+            <span class="tag">Prometheus</span>
+            <span class="tag">Grafana</span>
+          </div>
+          <div class="card-actions">
+            <a class="card-btn" href="sol.html">→ case study</a>
+            <a class="card-btn ghost" href="https://github.com/kuum-oss/sol" target="_blank" rel="noopener">↗ github</a>
+          </div>
+        </div>
+        <div class="card-right">
+          <ul class="card-feature-list">
+            <li>JMH microbenchmarks w/ baseline regression gate</li>
+            <li>Gatling load profiles: smoke, load, stress, soak, spike</li>
+            <li>Chaos tests via Toxiproxy & Chaos Monkey</li>
+            <li>Resilience4j circuit breaker & cache fallback checks</li>
+            <li>Heap pressure & graceful shutdown scenarios</li>
+            <li>Dockerized infra: Postgres, Redis, InfluxDB, Grafana</li>
+          </ul>
+        </div>
+        <span class="card-glyph" aria-hidden="true">≈</span>
+      </div>
+
       <!-- SOMEONE V2 — wide featured card -->
       <div class="card wide" style="cursor:default">
         <div class="card-left">
@@ -1084,78 +1156,6 @@
         <span class="card-arrow">↗</span>
         <span class="card-glyph" aria-hidden="true">▤</span>
       </a>
-
-      <!-- SOL — wide featured card -->
-      <div class="card wide" style="cursor:default">
-        <div class="card-left">
-          <div class="card-type">performance engineering · featured</div>
-          <div class="card-title">sol</div>
-          <div class="card-desc">
-            Three-tier performance testing system for a JVM microservice stack — microbenchmarks, load testing, and chaos engineering wired into one pipeline with full observability.
-          </div>
-          <div class="card-tags">
-            <span class="tag">Kotlin</span>
-            <span class="tag">Java 21</span>
-            <span class="tag">JMH</span>
-            <span class="tag">Gatling</span>
-            <span class="tag">Toxiproxy</span>
-            <span class="tag">Prometheus</span>
-            <span class="tag">Grafana</span>
-          </div>
-          <div class="card-actions">
-            <a class="card-btn" href="sol.html">→ case study</a>
-            <a class="card-btn ghost" href="https://github.com/kuum-oss/sol" target="_blank" rel="noopener">↗ github</a>
-          </div>
-        </div>
-        <div class="card-right">
-          <ul class="card-feature-list">
-            <li>JMH microbenchmarks w/ baseline regression gate</li>
-            <li>Gatling load profiles: smoke, load, stress, soak, spike</li>
-            <li>Chaos tests via Toxiproxy & Chaos Monkey</li>
-            <li>Resilience4j circuit breaker & cache fallback checks</li>
-            <li>Heap pressure & graceful shutdown scenarios</li>
-            <li>Dockerized infra: Postgres, Redis, InfluxDB, Grafana</li>
-          </ul>
-        </div>
-        <span class="card-glyph" aria-hidden="true">≈</span>
-      </div>
-
-      <!-- FOU — NotifyHub -->
-      <div class="card wide" style="cursor:default">
-        <div class="card-left">
-          <div class="card-type">microservices · event-driven · featured</div>
-          <div class="card-title">NotifyHub</div>
-          <div class="card-desc">
-            Event-driven notification microservice for an e-commerce platform.
-            Orders flow through RabbitMQ into a durable consumer pipeline — persisted to PostgreSQL,
-            reported to S3, with graceful degradation and async retry when S3 is unavailable.
-          </div>
-          <div class="card-tags">
-            <span class="tag">Java 21</span>
-            <span class="tag">Spring Boot 3</span>
-            <span class="tag">RabbitMQ</span>
-            <span class="tag">PostgreSQL</span>
-            <span class="tag">AWS S3</span>
-            <span class="tag">Testcontainers</span>
-            <span class="tag">JWT</span>
-          </div>
-          <div class="card-actions">
-            <a class="card-btn" href="fou.html">→ case study</a>
-            <a class="card-btn ghost" href="https://github.com/kuum-oss/fou" target="_blank" rel="noopener">↗ github</a>
-          </div>
-        </div>
-        <div class="card-right">
-          <ul class="card-feature-list">
-            <li>Durable queue + DLQ — zero message loss on restart</li>
-            <li>S3 fallback: PENDING_UPLOAD → @Scheduled retry</li>
-            <li>JOIN FETCH solves Hibernate N+1</li>
-            <li>Idempotent consumer — safe on duplicate delivery</li>
-            <li>5 Testcontainers tests — real Postgres, RabbitMQ, LocalStack</li>
-            <li>JWT auth + ownership check on all endpoints</li>
-          </ul>
-        </div>
-        <span class="card-glyph" aria-hidden="true">⇌</span>
-      </div>
 
     </div>
   </div>
